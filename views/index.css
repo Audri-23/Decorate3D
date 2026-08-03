@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: #FBF9F5;
+    color: #1E232A;
+  }
+
+  h1, h2, h3, .font-serif {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+}
+
+/* Custom Glassmorphic Toolbar & Buttons matching Screenshots */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(229, 222, 201, 0.6);
+}
+
+.gold-gradient-btn {
+  background: linear-gradient(135deg, #c89d44 0%, #a17a16 100%);
+  color: #ffffff;
+  transition: all 0.25s ease-in-out;
+}
+
+.gold-gradient-btn:hover {
+  background: linear-gradient(135deg, #a17a16 0%, #79571b 100%);
+  box-shadow: 0 4px 14px rgba(161, 122, 22, 0.35);
+  transform: translateY(-1px);
+}
+
+.gold-badge {
+  background-color: #f9f4e9;
+  color: #a17a16;
+  border: 1px solid #e9d3a4;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/* Custom range slider styling matching Screenshot 2 */
+input[type="range"]::-webkit-slider-thumb {
+  background-color: #a17a16;
+}
+
+input[type="range"]::-moz-range-thumb {
+  background-color: #a17a16;
+}
