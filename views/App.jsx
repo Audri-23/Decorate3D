@@ -10,6 +10,7 @@ import { RoomPlannerPreview } from './components/RoomPlannerPreview.jsx';
 import { AuthModal } from './components/AuthModal.jsx';
 import { SellerListingModal } from './components/SellerListingModal.jsx';
 import { CenteredNotification } from './components/CenteredNotification.jsx';
+import { CheckoutPage } from './features/f13-checkout/CheckoutPage.jsx';
 
 import { seedProductsData } from '../models/seedData.js';
 import { Box, ShieldCheck, MapPin, Truck, Grid, Lock, CheckCircle } from 'lucide-react';
@@ -26,6 +27,7 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSellerListingOpen, setIsSellerListingOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isStripeCheckoutOpen, setIsStripeCheckoutOpen] = useState(false);
   
   // Centered Notification Dialog
   const [notification, setNotification] = useState(null);
@@ -134,7 +136,29 @@ export default function App() {
     setIsRoomPlannerOpen(false);
   };
 
+  const handleOpenCart = () => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      showCenteredNotification(
+        'info',
+        'Login Required',
+        'Please log in to view your Escrow Cart and proceed to checkout.'
+      );
+    } else {
+      setIsCartOpen(true);
+    }
+  };
+
   const handleAddToCart = (productToAdd) => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      showCenteredNotification(
+        'info',
+        'Login Required',
+        'Please log in to add items to your Escrow Cart.'
+      );
+      return;
+    }
     setCart(prev => [...prev, productToAdd]);
     setIsCartOpen(true);
     showCenteredNotification(
@@ -149,13 +173,17 @@ export default function App() {
   };
 
   const handleCheckout = () => {
-    showCenteredNotification(
-      'success',
-      'Escrow Lock Confirmation',
-      `Payment of $${cart.reduce((s, i) => s + i.price, 0)} held in Escrow account. Delivery OTP verification code generated!`
-    );
-    setCart([]);
-    setIsCartOpen(false);
+    if (!user) {
+      setIsCartOpen(false);
+      setIsAuthModalOpen(true);
+      showCenteredNotification(
+        'info',
+        'Login Required',
+        'Please log in to complete your Stripe Escrow payment.'
+      );
+      return;
+    }
+    setIsStripeCheckoutOpen(true);
   };
 
   const handleLogout = () => {
@@ -188,7 +216,7 @@ export default function App() {
         openAuthModal={() => setIsAuthModalOpen(true)}
         user={user}
         onLogout={handleLogout}
-        openCart={() => setIsCartOpen(true)}
+        openCart={handleOpenCart}
         openSellerListingModal={() => setIsSellerListingOpen(true)}
       />
 
@@ -389,6 +417,23 @@ export default function App() {
         onCheckout={handleCheckout}
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
+      />
+
+      {/* F13 (Member 4) — Stripe Checkout Modal */}
+      <CheckoutPage
+        cart={cart}
+        buyerUser={user}
+        isOpen={isStripeCheckoutOpen}
+        onClose={() => setIsStripeCheckoutOpen(false)}
+        onPaymentSuccess={(summary) => {
+          setCart([]);
+          setIsCartOpen(false);
+          showCenteredNotification(
+            'success',
+            'Stripe Escrow Lock Successful',
+            `Payment of $${summary.summary?.totalPrice} processed via Stripe Test Mode! Funds locked in Escrow.`
+          );
+        }}
       />
 
       {/* Seller Multi-Angle 3D Listing Modal */}

@@ -10,6 +10,7 @@ import { initEmailTransporter } from './config/email.js';
 import productRoutes from './routes/productRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import moduleRoutes from './routes/moduleRoutes.js';
+import stripeRoutes from './features/f13-stripe-checkout/stripe.routes.js';
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use(express.json());
 app.use('/api/products', productRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/modules', moduleRoutes);
+app.use('/api/stripe', stripeRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({

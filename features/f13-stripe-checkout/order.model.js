@@ -1,0 +1,54 @@
+import mongoose from 'mongoose';
+
+const f13OrderSchema = new mongoose.Schema({
+  buyerEmail: {
+    type: String,
+    required: true
+  },
+  sellerStripeAccountId: {
+    type: String,
+    default: 'acct_1TestSellerAccount123'
+  },
+  productTitle: {
+    type: String,
+    required: true
+  },
+  productId: {
+    type: String
+  },
+  amount: {
+    type: Number,
+    required: true
+  },
+  platformCommissionFee: {
+    type: Number,
+    required: true
+  },
+  sellerEarnings: {
+    type: Number,
+    required: true
+  },
+  stripePaymentIntentId: {
+    type: String
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'succeeded', 'failed'],
+    default: 'pending'
+  },
+  escrowStatus: {
+    type: String,
+    enum: ['LOCKED_IN_ESCROW', 'DISPATCHED', 'DELIVERED', 'RELEASED_TO_SELLER'],
+    default: 'LOCKED_IN_ESCROW'
+  },
+  otpCode: {
+    type: String,
+    default: () => Math.floor(1000 + Math.random() * 9000).toString()
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+export const F13OrderModel = mongoose.models.F13Order || mongoose.model('F13Order', f13OrderSchema);
