@@ -1,6 +1,5 @@
 /**
  * F9 — Geo Map Finder Routes
- * Assigned to: Injamamul Haque Fahim
  */
 
 import express from 'express';
