@@ -11,6 +11,7 @@ import productRoutes from './routes/productRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import moduleRoutes from './routes/moduleRoutes.js';
 import stripeRoutes from './features/f13-stripe-checkout/stripe.routes.js';
+import geoRoutes from './features/f9-geo-map/geo.routes.js'; // F9 — Geo Map Finder (Injamamul Haque Fahim)
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/modules', moduleRoutes);
 app.use('/api/stripe', stripeRoutes);
+app.use('/api/geo', geoRoutes);    // F9 — Geo Map Finder (Injamamul Haque Fahim)
 
 app.get('/api/health', (req, res) => {
   res.json({

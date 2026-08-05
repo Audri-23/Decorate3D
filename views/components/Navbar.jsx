@@ -42,6 +42,18 @@ export const Navbar = ({ activeTab, setActiveTab, cartCount, openAuthModal, user
             >
               <span>3D Room Planner</span>
             </button>
+
+            {/*Geo Map Finder (Injamamul Haque Fahim) */}
+            <button
+              onClick={() => setActiveTab('geo_map')}
+              className={`text-sm font-medium transition-colors ${
+                activeTab === 'geo_map'
+                  ? 'text-[#1E232A] font-bold border-b-2 border-[#A17A16] pb-1'
+                  : 'text-gray-600 hover:text-[#A17A16]'
+              }`}
+            >
+              <span>Map Search</span>
+            </button>
           </nav>
 
           {/* Right Actions: Cart & Login/Profile */}
