@@ -1,6 +1,4 @@
 /**
- * F9 — Geo Map Finder Controller
- * Assigned to: Injamamul Haque Fahim
  * Feature: Buyers can search and locate furniture listings within a local
  * geographical radius using GPS coordinates and Haversine distance calculation.
  */
