@@ -55,6 +55,7 @@ export const loginUser = async (req, res) => {
 
     // Generate 6-digit 2FA OTP Code & Send Real Email
     const otpCode = generateOTP();
+    console.log(`[Email 2FA] Generated OTP for ${cleanEmail} (${targetRole}): ${otpCode}`);
     const sessionKey = `${cleanEmail}_${targetRole}`;
     activeOTPSessions.set(sessionKey, {
       type: 'login',
@@ -122,6 +123,7 @@ export const registerUser = async (req, res) => {
 
     // Generate 6-digit 2FA OTP Code
     const otpCode = generateOTP();
+    console.log(`[Email 2FA] Generated OTP for ${cleanEmail} (${targetRole}): ${otpCode}`);
     const newUserDraft = {
       name: name.trim(),
       email: cleanEmail,

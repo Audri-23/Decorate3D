@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, Upload, CheckCircle, Sparkles, Box, ShieldCheck, RefreshCw, Layers } from 'lucide-react';
 
 export const SellerListingModal = ({ isOpen, onClose, onAddProduct }) => {
@@ -12,6 +12,14 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct }) => {
   const [material, setMaterial] = useState('Top-Grain Leather & Solid Wood');
   const [era, setEra] = useState('Mid-Century Modern');
   const [description, setDescription] = useState('');
+
+  // Dynamic Pricing States (Module 2, Feature 1)
+  const [originalPrice, setOriginalPrice] = useState('');
+  const [itemAge, setItemAge] = useState('');
+  const [conditionGrade, setConditionGrade] = useState('GOOD');
+  const [pricingRecommendation, setPricingRecommendation] = useState(null);
+  const [isCalculatingPrice, setIsCalculatingPrice] = useState(false);
+  const [pricingError, setPricingError] = useState(null);
 
   // 4 Key Angles Photos (Front, Back, Side, Top)
   const [angles, setAngles] = useState({
@@ -31,7 +39,55 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct }) => {
   const [isProcessing3D, setIsProcessing3D] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
 
+  // Fetch Pricing Recommendation Hook
+  useEffect(() => {
+    const fetchRecommendation = async () => {
+      const priceNum = parseFloat(originalPrice);
+      const ageNum = parseFloat(itemAge);
+
+      if (!originalPrice || !itemAge || isNaN(priceNum) || isNaN(ageNum) || priceNum <= 0 || ageNum < 0) {
+        setPricingRecommendation(null);
+        setPricingError(null);
+        return;
+      }
+
+      setIsCalculatingPrice(true);
+      setPricingError(null);
+
+      try {
+        const res = await fetch('/api/modules/m2/price-recommendation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            originalPrice: priceNum,
+            itemAge: ageNum,
+            category,
+            conditionGrade
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          setPricingRecommendation(data.data.recommendedRange);
+        } else {
+          setPricingError(data.message);
+        }
+      } catch (err) {
+        setPricingError('Failed to connect to pricing engine.');
+      } finally {
+        setIsCalculatingPrice(false);
+      }
+    };
+
+    const delayDebounceFn = setTimeout(() => {
+      fetchRecommendation();
+    }, 400);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [originalPrice, itemAge, category, conditionGrade]);
+
   if (!isOpen) return null;
+
 
   // Start live camera stream
   const startCamera = async (targetAngle) => {
@@ -100,9 +156,9 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct }) => {
         title: title || 'Custom Seller 3D Furniture',
         subtitle: `${category} • Seller Verified 3D`,
         price: parseFloat(price) || 350,
-        estimatedNewPrice: (parseFloat(price) || 350) * 2.2,
+        estimatedNewPrice: parseFloat(originalPrice) || (parseFloat(price) || 350) * 2.2,
         category: category,
-        conditionGrade: 'EXCELLENT',
+        conditionGrade: conditionGrade,
         isRareFind: true,
         description: description || 'Handcrafted furniture item uploaded with multi-angle 3D spatial inspection texture model.',
         material: material,
@@ -224,14 +280,14 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct }) => {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-mono font-bold text-gray-700 uppercase mb-1">Price ($ USD)</label>
+                    <label className="block text-[11px] font-mono font-bold text-gray-700 uppercase mb-1">Listing Price ($ USD)</label>
                     <input
                       type="number"
                       required
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
                       placeholder="450"
-                      className="w-full px-4 py-2.5 bg-white border border-[#E5DEC9] rounded-xl text-sm focus:outline-none focus:border-[#A17A16]"
+                      className="w-full px-4 py-2.5 bg-white border border-[#E5DEC9] rounded-xl text-sm focus:outline-none focus:border-[#A17A16] font-bold text-[#A17A16]"
                     />
                   </div>
                 </div>
@@ -260,6 +316,93 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct }) => {
                   </div>
                 </div>
 
+                {/* AI pricing assistant panel */}
+                <div className="p-5 bg-[#F9F4E9]/50 border border-[#E9D3A4]/60 rounded-2xl space-y-4">
+                  <h3 className="text-xs font-mono font-bold text-[#A17A16] uppercase tracking-wider flex items-center space-x-1.5">
+                    <Sparkles className="w-4 h-4" />
+                    <span>AI & Regression Pricing Assistant</span>
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-mono font-bold text-gray-600 uppercase mb-1">Condition Grade</label>
+                      <select
+                        value={conditionGrade}
+                        onChange={(e) => setConditionGrade(e.target.value)}
+                        className="w-full px-2.5 py-2 bg-white border border-[#E5DEC9] rounded-lg text-xs focus:outline-none focus:border-[#A17A16] font-semibold"
+                      >
+                        <option value="EXCELLENT">EXCELLENT</option>
+                        <option value="GOOD">GOOD</option>
+                        <option value="FAIR">FAIR</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-mono font-bold text-gray-600 uppercase mb-1">Original Price ($)</label>
+                      <input
+                        type="number"
+                        value={originalPrice}
+                        onChange={(e) => setOriginalPrice(e.target.value)}
+                        placeholder="e.g. 1200"
+                        className="w-full px-3 py-2 bg-white border border-[#E5DEC9] rounded-lg text-xs focus:outline-none focus:border-[#A17A16]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-mono font-bold text-gray-600 uppercase mb-1">Item Age (Years)</label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={itemAge}
+                        onChange={(e) => setItemAge(e.target.value)}
+                        placeholder="e.g. 2.5"
+                        className="w-full px-3 py-2 bg-white border border-[#E5DEC9] rounded-lg text-xs focus:outline-none focus:border-[#A17A16]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Recommendation Card Output */}
+                  {(isCalculatingPrice || pricingRecommendation || pricingError) && (
+                    <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-[#E9D3A4] transition-all animate-fadeIn">
+                      {isCalculatingPrice && (
+                        <div className="flex items-center justify-center space-x-2 py-2 text-[11px] text-gray-500 font-mono">
+                          <RefreshCw className="w-4 h-4 animate-spin text-[#A17A16]" />
+                          <span>Computing pricing regression...</span>
+                        </div>
+                      )}
+
+                      {pricingError && (
+                        <div className="text-[11px] text-rose-600 py-1 font-mono text-center">{pricingError}</div>
+                      )}
+
+                      {pricingRecommendation && !isCalculatingPrice && (
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                          <div className="space-y-1 text-center sm:text-left">
+                            <span className="text-[9px] font-mono font-bold text-[#A17A16] uppercase tracking-wider block">
+                              Suggested Price Range
+                            </span>
+                            <span className="text-lg font-serif font-bold text-gray-900 block">
+                              ${pricingRecommendation.min} - ${pricingRecommendation.max}
+                            </span>
+                            <p className="text-[11px] text-gray-500 max-w-sm leading-relaxed">
+                              Suggested listing price is <strong className="text-gray-800">${pricingRecommendation.suggested}</strong>. This accounts for age depreciation and condition grade.
+                            </p>
+                          </div>
+                          
+                          <button
+                            type="button"
+                            onClick={() => setPrice(pricingRecommendation.suggested.toString())}
+                            className="bg-[#A17A16] hover:bg-[#8C5A2B] text-white px-4 py-2 rounded-xl font-bold text-xs shadow-md transition-all whitespace-nowrap flex items-center space-x-1.5"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            <span>APPLY SUGGESTED PRICE</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <label className="block text-[11px] font-mono font-bold text-gray-700 uppercase mb-1">Craftsmanship & Condition Description</label>
                   <textarea
@@ -280,6 +423,7 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct }) => {
                 </button>
               </div>
             )}
+
 
             {/* STEP 2: 3D MULTI-ANGLE CAPTURE (UPLOAD OR LIVE CAMERA) */}
             {activeStep === 'multi_angle_capture' && (
