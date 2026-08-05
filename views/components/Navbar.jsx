@@ -73,15 +73,17 @@ export const Navbar = ({ activeTab, setActiveTab, cartCount, openAuthModal, user
               )}
             </button>
 
-            {/* List Item (+3D) Button */}
-            <button
-              onClick={openSellerListingModal}
-              className="px-3.5 py-1.5 rounded-full border border-[#E9D3A4] bg-[#F9F4E9] hover:bg-[#E9D3A4] text-[#A17A16] font-mono text-xs font-bold transition-all shadow-sm flex items-center space-x-1.5"
-              title="Upload multi-angle photos or snap with device camera to generate 3D model"
-            >
-              <Box className="w-3.5 h-3.5" />
-              <span>List Furniture (+3D)</span>
-            </button>
+            {/* List Item (+3D) Button - Only visible for authenticated Seller role */}
+            {user && user.role === 'seller' && (
+              <button
+                onClick={openSellerListingModal}
+                className="px-3.5 py-1.5 rounded-full border border-[#E9D3A4] bg-[#F9F4E9] hover:bg-[#E9D3A4] text-[#A17A16] font-mono text-xs font-bold transition-all shadow-sm flex items-center space-x-1.5"
+                title="Upload furniture and 3D model"
+              >
+                <Box className="w-3.5 h-3.5" />
+                <span>List Furniture (+3D)</span>
+              </button>
+            )}
 
             {/* Profile Menu or Clear Login/Register Button */}
             {user ? (
@@ -90,7 +92,13 @@ export const Navbar = ({ activeTab, setActiveTab, cartCount, openAuthModal, user
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center space-x-2 px-3 py-1.5 rounded-full border border-[#E5DEC9] hover:border-[#A17A16] transition-all bg-white shadow-sm"
                 >
-                  <img src={user?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"} alt={user?.name || "User"} className="w-7 h-7 rounded-full object-cover" />
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt={user?.name || "User"} className="w-7 h-7 rounded-full object-cover border border-[#A17A16]/40" />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-[#1E232A] text-[#A17A16] flex items-center justify-center font-bold text-xs">
+                      <User className="w-4 h-4" />
+                    </div>
+                  )}
                   <span className="text-xs font-bold text-gray-800 hidden sm:inline">{user?.name || "User"}</span>
                   <ChevronDown className="w-3.5 h-3.5 text-gray-500" />
                 </button>

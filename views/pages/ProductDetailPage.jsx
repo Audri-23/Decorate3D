@@ -27,63 +27,67 @@ export const ProductDetailPage = ({ product, open3DInspector, onAddToCart, onLau
         
         {/* Left Column: Image & 3D Interactive Hero Preview (Cols 1-7) */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-[#1E232A] shadow-xl border border-[#E5DEC9] group">
-            
+          
+          {/* Main Clean Product Image Viewport */}
+          <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-[#1E232A] shadow-xl border border-[#E5DEC9]">
             {/* Main Product Image */}
             <img
               src={images[selectedImageIndex] || images[0]}
               alt={product.title}
-              className="w-full h-full object-cover opacity-90 transition-opacity duration-300"
+              className="w-full h-full object-cover transition-opacity duration-300"
             />
 
-            {/* Top Left Badge: 3D Model Available matching Screenshot 1 */}
+            {/* Top Left Badge: 3D Model Available */}
             <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-[#E5DEC9] flex items-center space-x-2 shadow-sm">
               <Box className="w-4 h-4 text-[#A17A16]" />
               <span className="text-xs font-bold text-gray-800 tracking-wide">3D Model Available</span>
             </div>
-
-            {/* Center Hero Overlay Button: LAUNCH INTERACTIVE 3D INSPECTOR matching Screenshot 1 */}
-            <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] flex items-center justify-center transition-all group-hover:bg-black/40">
-              <button
-                onClick={() => open3DInspector(product)}
-                className="gold-gradient-btn px-6 py-3.5 rounded-xl font-mono text-sm font-bold tracking-wider flex items-center space-x-3 shadow-2xl transition-all hover:scale-105 border border-[#E9D3A4]/40"
-              >
-                <Box className="w-5 h-5 animate-pulse" />
-                <span>LAUNCH INTERACTIVE 3D INSPECTOR</span>
-              </button>
-            </div>
           </div>
 
-          {/* Thumbnail Gallery Row matching Screenshot 1 */}
-          <div className="flex items-center space-x-4 pt-2">
-            {/* Image Thumbnail 1 */}
-            <button
-              onClick={() => setSelectedImageIndex(0)}
-              className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${
-                selectedImageIndex === 0 ? 'border-[#A17A16] ring-2 ring-[#A17A16]/20' : 'border-[#E5DEC9] opacity-70 hover:opacity-100'
-              }`}
-            >
-              <img src={images[0]} alt="Thumbnail 1" className="w-full h-full object-cover" />
-            </button>
+          {/* Dedicated Separate Launch 3D Inspector Button */}
+          <button
+            onClick={() => open3DInspector(product)}
+            className="w-full gold-gradient-btn py-3.5 px-6 rounded-2xl font-mono text-sm font-bold tracking-wider flex items-center justify-center space-x-3 shadow-lg hover:scale-[1.01] transition-all border border-[#E9D3A4]/50"
+          >
+            <Box className="w-5 h-5 text-gray-900 animate-pulse" />
+            <span>LAUNCH INTERACTIVE 3D INSPECTOR</span>
+          </button>
+
+          {/* Thumbnail Gallery Row */}
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            {images.map((imgUrl, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedImageIndex(index)}
+                className={`w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 transition-all relative ${
+                  selectedImageIndex === index ? 'border-[#A17A16] ring-2 ring-[#A17A16]/20' : 'border-[#E5DEC9] opacity-70 hover:opacity-100'
+                }`}
+              >
+                <img src={imgUrl} alt={`Angle ${index + 1}`} className="w-full h-full object-cover" />
+                <span className="absolute bottom-0 right-0 bg-black/60 text-white text-[9px] px-1 font-mono">
+                  {index === 0 ? 'Front' : (index === 1 ? 'Back' : (index === 2 ? 'Side' : 'Top'))}
+                </span>
+              </button>
+            ))}
 
             {/* 3D Launch Thumbnail Button */}
             <button
               onClick={() => open3DInspector(product)}
-              className="w-20 h-20 rounded-xl border-2 border-[#E5DEC9] hover:border-[#A17A16] bg-white flex flex-col items-center justify-center text-gray-700 hover:text-[#A17A16] transition-all group"
+              className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-[#E5DEC9] hover:border-[#A17A16] bg-white flex flex-col items-center justify-center text-gray-700 hover:text-[#A17A16] transition-all group"
               title="Launch 3D Model Inspector"
             >
-              <Box className="w-6 h-6 transition-transform group-hover:scale-110" />
-              <span className="text-[10px] font-mono font-bold mt-1">3D VIEW</span>
+              <Box className="w-5 h-5 sm:w-6 sm:h-6 transition-transform group-hover:scale-110" />
+              <span className="text-[9px] sm:text-[10px] font-mono font-bold mt-1">3D VIEW</span>
             </button>
 
             {/* Room Planner Thumbnail Button */}
             <button
               onClick={onLaunchRoomPlanner}
-              className="w-20 h-20 rounded-xl border-2 border-[#E5DEC9] hover:border-[#A17A16] bg-white flex flex-col items-center justify-center text-gray-700 hover:text-[#A17A16] transition-all group"
+              className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-[#E5DEC9] hover:border-[#A17A16] bg-white flex flex-col items-center justify-center text-gray-700 hover:text-[#A17A16] transition-all group"
               title="Launch 3D Room Planner"
             >
-              <Sparkles className="w-6 h-6 transition-transform group-hover:scale-110 text-[#A17A16]" />
-              <span className="text-[10px] font-mono font-bold mt-1">PLANNER</span>
+              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 transition-transform group-hover:scale-110 text-[#A17A16]" />
+              <span className="text-[9px] sm:text-[10px] font-mono font-bold mt-1">PLANNER</span>
             </button>
           </div>
         </div>

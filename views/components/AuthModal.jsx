@@ -12,12 +12,21 @@ export const AuthModal = ({ isOpen, onClose, onLoginSuccess, initialRole = 'buye
   const [name, setName] = useState('');
   const [role, setRole] = useState(initialRole);
 
-  // Sync role state with initialRole prop when modal opens
+  // Reset form inputs & credentials whenever modal opens or mode changes
   React.useEffect(() => {
-    if (initialRole) {
-      setRole(initialRole);
+    if (isOpen) {
+      if (initialRole) {
+        setRole(initialRole);
+      }
+      setEmail('');
+      setPassword('');
+      setName('');
+      setOtpInput('');
+      setActiveStep('credentials');
+      setFormError(null);
+      setEmailPreviewUrl(null);
     }
-  }, [initialRole, isOpen]);
+  }, [isOpen, initialRole, activeMode]);
 
   // 2FA OTP State
   const [otpInput, setOtpInput] = useState('');

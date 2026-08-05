@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true },
   password: { type: String, required: true },
   role: { type: String, enum: ['buyer', 'seller', 'courier', 'admin'], default: 'buyer' },
-  avatar: { type: String, default: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150' },
+  avatar: { type: String, default: '' },
   isVerified: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });

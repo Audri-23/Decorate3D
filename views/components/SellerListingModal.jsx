@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Camera, Upload, CheckCircle, Sparkles, Box, ShieldCheck, RefreshCw, Layers } from 'lucide-react';
+import { X, Camera, Upload, CheckCircle, Sparkles, Box, ShieldCheck, RefreshCw, Layers, AlertCircle, FileCode } from 'lucide-react';
+import { Viewer3DCanvas } from './Viewer3DCanvas.jsx';
 
 export const SellerListingModal = ({ isOpen, onClose, onAddProduct }) => {
   const [activeStep, setActiveStep] = useState('details'); // 'details' or 'multi_angle_capture'
@@ -12,6 +13,12 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct }) => {
   const [material, setMaterial] = useState('Top-Grain Leather & Solid Wood');
   const [era, setEra] = useState('Mid-Century Modern');
   const [description, setDescription] = useState('');
+
+  // 3D GLB/GLTF Model File State & Validation
+  const [glbFile, setGlbFile] = useState(null);
+  const [glbPreviewUrl, setGlbPreviewUrl] = useState('');
+  const [glbError, setGlbError] = useState(null);
+  const [glbFileName, setGlbFileName] = useState('');
 
   // Dynamic Pricing States (Module 2, Feature 1)
   const [originalPrice, setOriginalPrice] = useState('');
@@ -129,7 +136,43 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct }) => {
     stopCamera();
   };
 
-  // Handle mock file upload selection
+  // Handle 3D GLB/GLTF model selection and validation
+  const handleGlbFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setGlbError(null);
+    const fileName = file.name;
+    const ext = fileName.slice(((fileName.lastIndexOf(".") - 1) >>> 0) + 2).toLowerCase();
+
+    // Format validation (.glb or .gltf)
+    if (ext !== 'glb' && ext !== 'gltf') {
+      setGlbError(`Invalid format (.${ext}). Only .glb and .gltf 3D model files are supported.`);
+      setGlbFile(null);
+      setGlbPreviewUrl('');
+      setGlbFileName('');
+      return;
+    }
+
+    // Size validation (Max 100 MB)
+    const maxSizeBytes = 100 * 1024 * 1024; // 100 MB
+    if (file.size > maxSizeBytes) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      setGlbError(`File size (${sizeMB} MB) exceeds maximum allowed limit of 100 MB.`);
+      setGlbFile(null);
+      setGlbPreviewUrl('');
+      setGlbFileName('');
+      return;
+    }
+
+    // Valid file selected
+    setGlbFile(file);
+    setGlbFileName(file.name);
+    const previewUrl = URL.createObjectURL(file);
+    setGlbPreviewUrl(previewUrl);
+  };
+
+  // Handle image file upload selection
   const handleFileUpload = (e, angleKey) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -141,26 +184,40 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct }) => {
     }
   };
 
-  const handleSubmitFinal = () => {
+  const handleSubmitFinal = async () => {
     setIsProcessing3D(true);
     setProcessingProgress(20);
 
-    // Simulate 3D Mesh texture map synthesis
-    setTimeout(() => setProcessingProgress(60), 600);
-    setTimeout(() => setProcessingProgress(100), 1200);
+    let uploadedGlbUrl = '/uploads/models/sample_chair.gltf';
 
-    setTimeout(() => {
-      setIsProcessing3D(false);
+    try {
+      // If a custom GLB file was uploaded, send to backend upload endpoint
+      if (glbFile) {
+        setProcessingProgress(40);
+        const formData = new FormData();
+        formData.append('files', glbFile);
+
+        const uploadRes = await fetch('/api/products/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const uploadData = await uploadRes.json();
+        if (uploadData.success && uploadData.data?.model3DUrl) {
+          uploadedGlbUrl = uploadData.data.model3DUrl;
+        }
+      }
+
+      setProcessingProgress(70);
+
       const newProduct = {
-        _id: 'prod_' + Date.now(),
         title: title || 'Custom Seller 3D Furniture',
-        subtitle: `${category} • Seller Verified 3D`,
-        price: parseFloat(price) || 350,
-        estimatedNewPrice: parseFloat(originalPrice) || (parseFloat(price) || 350) * 2.2,
+        subtitle: `${category} • Verified 3D Model`,
+        price: parseFloat(price) || 450,
+        estimatedNewPrice: parseFloat(originalPrice) || (parseFloat(price) || 450) * 2.2,
         category: category,
         conditionGrade: conditionGrade,
         isRareFind: true,
-        description: description || 'Handcrafted furniture item uploaded with multi-angle 3D spatial inspection texture model.',
+        description: description || 'Handcrafted furniture item uploaded with interactive GLB/GLTF 3D model.',
         material: material,
         era: era,
         dimensions: { width: '32 in', depth: '34 in', height: '32 in' },
@@ -168,6 +225,8 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct }) => {
         multiAngleImages: angles,
         has3DModel: true,
         model3D: {
+          url: uploadedGlbUrl,
+          source: 'upload',
           archivalSeries: 'Seller Custom Series № ' + Math.floor(Math.random() * 900 + 100),
           polygonCount: '142.8k',
           lodLevel: 'ULTRA',
@@ -182,9 +241,35 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct }) => {
         }
       };
 
-      onAddProduct(newProduct);
-      onClose();
-    }, 1500);
+      // Post product to backend API
+      let finalCreatedProduct = newProduct;
+      try {
+        const res = await fetch('/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newProduct)
+        });
+        const resData = await res.json();
+        if (resData.success && resData.data) {
+          finalCreatedProduct = resData.data;
+        }
+      } catch (err) {
+        console.warn('API post error, falling back to local state:', err);
+      }
+
+      setProcessingProgress(100);
+
+      setTimeout(() => {
+        setIsProcessing3D(false);
+        onAddProduct(finalCreatedProduct);
+        onClose();
+        resetForm();
+      }, 500);
+
+    } catch (err) {
+      console.error('Submission error:', err);
+      setIsProcessing3D(false);
+    }
   };
 
   return (
@@ -479,7 +564,74 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct }) => {
                   </div>
                 )}
 
-                {/* 4 Angle Grid (Front, Back, Side, Top) */}
+                {/* 3D GLB/GLTF Model Upload Section */}
+                <div className="bg-white p-5 rounded-2xl border border-[#E5DEC9] space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-mono font-bold text-[#A17A16] uppercase tracking-wider flex items-center space-x-2">
+                        <Box className="w-4 h-4" />
+                        <span>Interactive 3D Model File (.GLB / .GLTF)</span>
+                      </h4>
+                      <p className="text-[11px] text-gray-500 mt-0.5">
+                        Upload a 3D model file for interactive 360° buyer viewing (Max size: 100 MB).
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-mono bg-[#F9F4E9] border border-[#E9D3A4] text-[#A17A16] px-2.5 py-1 rounded-full font-bold">
+                      .GLB / .GLTF (≤100MB)
+                    </span>
+                  </div>
+
+                  {/* File Upload Selector Dropzone */}
+                  <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                    <label className="w-full sm:w-auto bg-[#1E232A] hover:bg-black text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md cursor-pointer flex items-center justify-center space-x-2 transition-all">
+                      <Upload className="w-4 h-4 text-[#A17A16]" />
+                      <span>Select 3D Model File</span>
+                      <input
+                        id="glb-file-input"
+                        type="file"
+                        accept=".glb,.gltf,model/gltf-binary,model/gltf+json,application/octet-stream"
+                        multiple={false}
+                        onChange={handleGlbFileSelect}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {glbFileName ? (
+                      <div className="flex items-center space-x-2 text-xs text-emerald-700 font-mono bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200">
+                        <CheckCircle className="w-4 h-4 text-emerald-600" />
+                        <span className="font-bold truncate max-w-xs">{glbFileName}</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400 font-mono italic">No custom file selected (Default studio model active)</span>
+                    )}
+                  </div>
+
+                  {/* Validation Error Message Alert */}
+                  {glbError && (
+                    <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-mono flex items-center space-x-2 animate-fadeIn">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                      <span>{glbError}</span>
+                    </div>
+                  )}
+
+                  {/* Live Interactive 3D Model Verification Preview */}
+                  <div className="space-y-2 pt-2 border-t border-[#E5DEC9]/60">
+                    <div className="flex items-center justify-between text-xs font-mono font-bold text-gray-700">
+                      <span>LIVE 3D MODEL PREVIEW</span>
+                      <span className="text-[#A17A16] text-[10px]">Rotate, Zoom & Pan to verify</span>
+                    </div>
+
+                    <div className="h-56 w-full rounded-2xl overflow-hidden border border-[#E5DEC9] bg-[#FBF9F5] relative shadow-inner">
+                      <Viewer3DCanvas
+                        modelUrl={glbPreviewUrl || '/uploads/models/sample_chair.gltf'}
+                        isAutoRotating={true}
+                        zoomFactor={4.2}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4 Angle Photos Grid */}
                 <div className="grid grid-cols-2 gap-4">
                   {[
                     { key: 'front', label: '1. FRONT VIEW', desc: 'Front seat & frame face' },
@@ -534,7 +686,7 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct }) => {
                   className="w-full gold-gradient-btn py-4 rounded-xl font-bold text-sm shadow-xl tracking-wider flex items-center justify-center space-x-2"
                 >
                   <Sparkles className="w-5 h-5" />
-                  <span>PUBLISH ITEM & GENERATE 360° 3D MODEL</span>
+                  <span>PUBLISH ITEM WITH 3D MODEL</span>
                 </button>
               </div>
             )}

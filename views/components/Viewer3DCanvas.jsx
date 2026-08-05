@@ -1,9 +1,11 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 export const Viewer3DCanvas = ({
+  modelUrl = null,
   product = null,
-  geometryType = 'lounge_chair',
   selectedMaterial = 'tan',
   isWireframe = false,
   isAutoRotating = false,
@@ -11,37 +13,52 @@ export const Viewer3DCanvas = ({
   zoomFactor = 4.5,
   elevationOffset = 0.0,
   presetAngle = 'front', // 'front', 'back', 'side', 'top'
+  onLoading = null,
+  onLoadSuccess = null,
+  onLoadError = null,
 }) => {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
   const modelGroupRef = useRef(null);
   const cameraRef = useRef(null);
   const rendererRef = useRef(null);
-  const interactiveMaterialsRef = useRef([]);
+  const controlsRef = useRef(null);
+  const loadedMaterialsRef = useRef([]);
+
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
 
   // Material Tint Colors
   const materialColors = {
-    tan: 0xffffff,       // Original full photo color balance
+    tan: 0xffffff,       // Original model textures
     forest: 0xc2dfcc,    // Sage Forest tint
     ebony: 0x999999,     // Onyx Monochrome tint
   };
+
+  // Determine target GLB/GLTF URL
+  const targetUrl = modelUrl || product?.model3D?.url || '/uploads/models/sample_chair.gltf';
 
   useEffect(() => {
     const container = mountRef.current;
     if (!container) return;
 
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+    setIsLoading(true);
+    setLoadError(null);
+    setLoadingProgress(10);
+    if (onLoading) onLoading(10);
+
+    const width = container.clientWidth || 600;
+    const height = container.clientHeight || 450;
 
     // 1. Scene Setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xfbf9f5); // Soft cream studio background
+    scene.background = new THREE.Color(0xfbf9f5); // Neutral cream studio environment
     sceneRef.current = scene;
 
     // 2. Camera Setup
     const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
-    camera.position.set(0, 1.1 + elevationOffset, zoomFactor);
-    camera.lookAt(0, 0, 0);
+    camera.position.set(0, 1.2 + elevationOffset, zoomFactor);
     cameraRef.current = camera;
 
     // 3. Renderer Setup
@@ -51,14 +68,23 @@ export const Viewer3DCanvas = ({
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
+    renderer.toneMappingExposure = 1.15;
     rendererRef.current = renderer;
 
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
 
-    // 4. Three-Point Studio Lighting
-    const ambientLight = new THREE.AmbientLight(0xfff8f0, 1.5);
+    // 4. OrbitControls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 2 + 0.05; // Ground plane boundary constraint
+    controls.minDistance = 1.5;
+    controls.maxDistance = 10;
+    controlsRef.current = controls;
+
+    // 5. Studio Lighting Architecture
+    const ambientLight = new THREE.AmbientLight(0xfff8f0, 1.6);
     scene.add(ambientLight);
 
     const keyLight = new THREE.DirectionalLight(0xfff5ea, 2.2);
@@ -69,269 +95,104 @@ export const Viewer3DCanvas = ({
     keyLight.shadow.bias = -0.0001;
     scene.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight(0xdce6f2, 1.1);
+    const fillLight = new THREE.DirectionalLight(0xdce6f2, 1.2);
     fillLight.position.set(-4.5, 3.5, -3.5);
     scene.add(fillLight);
 
-    const rimLight = new THREE.DirectionalLight(0xffeedd, 0.8);
+    const rimLight = new THREE.DirectionalLight(0xffeedd, 0.9);
     rimLight.position.set(0, 5, -5);
     scene.add(rimLight);
 
-    // Floor Shadow & Studio Grid
+    // Ground Floor Shadow & Studio Grid
     const floorGeo = new THREE.PlaneGeometry(12, 12);
-    const floorMat = new THREE.ShadowMaterial({ opacity: 0.18 });
+    const floorMat = new THREE.ShadowMaterial({ opacity: 0.22 });
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -0.95;
+    floor.position.y = -0.01;
     floor.receiveShadow = true;
     scene.add(floor);
 
     const grid = new THREE.GridHelper(8, 16, 0xe5dec9, 0xf0ebd9);
-    grid.position.y = -0.95;
+    grid.position.y = 0;
     scene.add(grid);
 
-    // 5. Load Multi-Angle Photos (Front, Back, Side, Top)
-    const frontUrl = product?.multiAngleImages?.front || product?.images?.[0] || 'https://images.unsplash.com/photo-1580481072645-022f9a6d1276?w=800&auto=format&fit=crop&q=80';
-    const backUrl = product?.multiAngleImages?.back || product?.images?.[1] || 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&auto=format&fit=crop&q=80';
-    const sideUrl = product?.multiAngleImages?.side || product?.images?.[2] || 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=800&auto=format&fit=crop&q=80';
-    const topUrl = product?.multiAngleImages?.top || product?.images?.[0] || 'https://images.unsplash.com/photo-1580481072645-022f9a6d1276?w=800&auto=format&fit=crop&q=80';
-
-    const textureLoader = new THREE.TextureLoader();
-
-    const frontTex = textureLoader.load(frontUrl, (t) => { t.colorSpace = THREE.SRGBColorSpace; });
-    const backTex = textureLoader.load(backUrl, (t) => { t.colorSpace = THREE.SRGBColorSpace; });
-    const sideTex = textureLoader.load(sideUrl, (t) => { t.colorSpace = THREE.SRGBColorSpace; });
-    const topTex = textureLoader.load(topUrl, (t) => { t.colorSpace = THREE.SRGBColorSpace; });
-
-    // Casing / Frame Material (Rich Dark Solid Walnut Wood)
-    const woodMat = new THREE.MeshStandardMaterial({ color: 0x3b2212, roughness: 0.28, metalness: 0.05, wireframe: isWireframe });
-    // Brass Ferrules & Accents Material
-    const brassMat = new THREE.MeshStandardMaterial({ color: 0xc89d44, roughness: 0.2, metalness: 0.85, wireframe: isWireframe });
-
-    const frontMat = new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.35, metalness: 0.05, wireframe: isWireframe });
-    const backMat = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.35, metalness: 0.05, wireframe: isWireframe });
-    const sideMat = new THREE.MeshStandardMaterial({ map: sideTex, roughness: 0.35, metalness: 0.05, wireframe: isWireframe });
-    const topMat = new THREE.MeshStandardMaterial({ map: topTex, roughness: 0.35, metalness: 0.05, wireframe: isWireframe });
-
-    interactiveMaterialsRef.current = [frontMat, backMat, sideMat, topMat, woodMat, brassMat];
-
+    // 6. Load GLB/GLTF Model File
+    const loader = new GLTFLoader();
     const modelGroup = new THREE.Group();
     modelGroupRef.current = modelGroup;
-
-    const cat = (product?.category || '').toLowerCase();
-    const type = product?.model3D?.geometryType || (cat.includes('sofa') ? 'sofa' : (cat.includes('table') ? 'table' : 'lounge_chair'));
-
-    // --- A. LOUNGE CHAIR / ARMCHAIR VOLUMETRIC 3D MESH ---
-    if (type === 'lounge_chair') {
-      // 1. Seat Cushion (Top texture on top, Front texture on front)
-      const seatGeo = new THREE.BoxGeometry(1.6, 0.32, 1.4);
-      const seatMaterials = [sideMat, sideMat, topMat, woodMat, frontMat, backMat];
-      const seatMesh = new THREE.Mesh(seatGeo, seatMaterials);
-      seatMesh.position.set(0, -0.05, 0.05);
-      seatMesh.castShadow = true;
-      seatMesh.receiveShadow = true;
-      modelGroup.add(seatMesh);
-
-      // 2. Ergonomic Tufted Backrest (Front texture on front, REAL BACK TEXTURE on rear face!)
-      const backGeo = new THREE.BoxGeometry(1.6, 1.35, 0.25);
-      const backMaterials = [sideMat, sideMat, woodMat, woodMat, frontMat, backMat];
-      const backMesh = new THREE.Mesh(backGeo, backMaterials);
-      backMesh.position.set(0, 0.62, -0.52);
-      backMesh.rotation.x = THREE.MathUtils.degToRad(-12);
-      backMesh.castShadow = true;
-      backMesh.receiveShadow = true;
-      modelGroup.add(backMesh);
-
-      // 3. Backrest Brass Buttons (8 3D tufts)
-      const buttonPositions = [
-        [-0.48, 0.88, -0.38], [0, 0.88, -0.38], [0.48, 0.88, -0.38],
-        [-0.48, 0.52, -0.46], [0, 0.52, -0.46], [0.48, 0.52, -0.46],
-        [-0.48, 0.20, -0.54], [0.48, 0.20, -0.54]
-      ];
-      buttonPositions.forEach(([bx, by, bz]) => {
-        const bGeo = new THREE.SphereGeometry(0.038, 16, 16);
-        const bMesh = new THREE.Mesh(bGeo, brassMat);
-        bMesh.position.set(bx, by, bz);
-        modelGroup.add(bMesh);
-      });
-
-      // 4. Sculpted Walnut Armrests & 4 Angled Support Legs
-      const createArmFrame = (isRight) => {
-        const armGroup = new THREE.Group();
-        const posX = isRight ? 0.84 : -0.84;
-
-        // Top Armrest Rail
-        const railGeo = new THREE.BoxGeometry(0.12, 0.07, 1.45);
-        const rail = new THREE.Mesh(railGeo, woodMat);
-        rail.position.set(posX, 0.28, 0.0);
-        rail.castShadow = true;
-        armGroup.add(rail);
-
-        // Front Leg
-        const legFGeo = new THREE.CylinderGeometry(0.045, 0.03, 1.05, 16);
-        const legF = new THREE.Mesh(legFGeo, woodMat);
-        legF.position.set(posX, -0.42, 0.58);
-        legF.rotation.z = THREE.MathUtils.degToRad(isRight ? -8 : 8);
-        legF.castShadow = true;
-        armGroup.add(legF);
-
-        // Rear Leg
-        const legRGeo = new THREE.CylinderGeometry(0.045, 0.028, 1.15, 16);
-        const legR = new THREE.Mesh(legRGeo, woodMat);
-        legR.position.set(posX, -0.42, -0.58);
-        legR.rotation.x = THREE.MathUtils.degToRad(-16);
-        legR.rotation.z = THREE.MathUtils.degToRad(isRight ? -8 : 8);
-        legR.castShadow = true;
-        armGroup.add(legR);
-
-        // Brass Leg Caps
-        const capGeo = new THREE.CylinderGeometry(0.032, 0.028, 0.08, 16);
-        const capF = new THREE.Mesh(capGeo, brassMat);
-        capF.position.set(posX, -0.90, 0.62);
-        armGroup.add(capF);
-
-        const capR = new THREE.Mesh(capGeo, brassMat);
-        capR.position.set(posX, -0.90, -0.72);
-        armGroup.add(capR);
-
-        return armGroup;
-      };
-
-      modelGroup.add(createArmFrame(false));
-      modelGroup.add(createArmFrame(true));
-    }
-    // --- B. CHESTERFIELD SOFA VOLUMETRIC 3D MESH ---
-    else if (type === 'sofa') {
-      // 1. Wide Seat Cushion Platform
-      const seatGeo = new THREE.BoxGeometry(2.5, 0.35, 1.3);
-      const seatMaterials = [sideMat, sideMat, topMat, woodMat, frontMat, backMat];
-      const seatMesh = new THREE.Mesh(seatGeo, seatMaterials);
-      seatMesh.position.set(0, -0.05, 0.05);
-      seatMesh.castShadow = true;
-      modelGroup.add(seatMesh);
-
-      // 2. Tufted Backrest (Front & Back view textures)
-      const backGeo = new THREE.BoxGeometry(2.5, 1.1, 0.28);
-      const backMaterials = [sideMat, sideMat, woodMat, woodMat, frontMat, backMat];
-      const backMesh = new THREE.Mesh(backGeo, backMaterials);
-      backMesh.position.set(0, 0.52, -0.5);
-      backMesh.castShadow = true;
-      modelGroup.add(backMesh);
-
-      // 3. Rolled Side Armrests
-      const createArm = (isRight) => {
-        const armGeo = new THREE.BoxGeometry(0.28, 0.85, 1.45);
-        const armMaterials = [sideMat, sideMat, topMat, woodMat, frontMat, backMat];
-        const armMesh = new THREE.Mesh(armGeo, armMaterials);
-        armMesh.position.set(isRight ? 1.35 : -1.35, 0.32, 0);
-        armMesh.castShadow = true;
-        return armMesh;
-      };
-
-      modelGroup.add(createArm(false));
-      modelGroup.add(createArm(true));
-
-      // 4. Turned Hardwood Legs
-      [-1.1, 1.1].forEach((lx) => {
-        [-0.5, 0.5].forEach((lz) => {
-          const lGeo = new THREE.CylinderGeometry(0.05, 0.03, 0.45, 16);
-          const lMesh = new THREE.Mesh(lGeo, woodMat);
-          lMesh.position.set(lx, -0.42, lz);
-          lMesh.castShadow = true;
-          modelGroup.add(lMesh);
-        });
-      });
-    }
-    // --- C. LIVE-EDGE TABLE VOLUMETRIC 3D MESH ---
-    else {
-      // 1. Solid Table Slab Top (Top texture on top surface)
-      const slabGeo = new THREE.BoxGeometry(2.3, 0.16, 1.25);
-      const slabMaterials = [sideMat, sideMat, topMat, woodMat, frontMat, backMat];
-      const slabMesh = new THREE.Mesh(slabGeo, slabMaterials);
-      slabMesh.position.set(0, 0.25, 0);
-      slabMesh.castShadow = true;
-      modelGroup.add(slabMesh);
-
-      // 2. Powder-Coated Steel Hairpin Legs
-      [-0.95, 0.95].forEach((lx) => {
-        [-0.48, 0.48].forEach((lz) => {
-          const lGeo = new THREE.CylinderGeometry(0.035, 0.02, 0.95, 16);
-          const lMesh = new THREE.Mesh(lGeo, woodMat);
-          lMesh.position.set(lx, -0.30, lz);
-          lMesh.rotation.z = lx > 0 ? -0.12 : 0.12;
-          lMesh.castShadow = true;
-          modelGroup.add(lMesh);
-        });
-      });
-    }
-
-    modelGroup.position.y = 0.1;
     scene.add(modelGroup);
 
-    // 6. Interactive Mouse & Touch Drag Controls
-    let isDragging = false;
-    let previousMousePosition = { x: 0, y: 0 };
+    loadedMaterialsRef.current = [];
 
-    const handleMouseDown = (e) => {
-      isDragging = true;
-      previousMousePosition = { x: e.clientX, y: e.clientY };
-    };
+    loader.load(
+      targetUrl,
+      (gltf) => {
+        const loadedModel = gltf.scene;
 
-    const handleMouseMove = (e) => {
-      if (!isDragging || !modelGroupRef.current) return;
-      const deltaX = e.clientX - previousMousePosition.x;
-      const deltaY = e.clientY - previousMousePosition.y;
+        // Auto-center and normalize bounding box
+        const box = new THREE.Box3().setFromObject(loadedModel);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
 
-      modelGroupRef.current.rotation.y += deltaX * 0.01;
-      modelGroupRef.current.rotation.x += deltaY * 0.005;
-      modelGroupRef.current.rotation.x = Math.max(-0.4, Math.min(0.4, modelGroupRef.current.rotation.x));
+        // Center model origin
+        loadedModel.position.x -= center.x;
+        loadedModel.position.y -= box.min.y; // Sit model cleanly on ground plane
+        loadedModel.position.z -= center.z;
 
-      previousMousePosition = { x: e.clientX, y: e.clientY };
-    };
+        // Scale model to fit 1.8m standard studio bounding box if needed
+        const maxDim = Math.max(size.x, size.y, size.z);
+        if (maxDim > 0) {
+          const targetScale = 1.8 / maxDim;
+          loadedModel.scale.setScalar(targetScale);
+        }
 
-    const handleMouseUp = () => {
-      isDragging = false;
-    };
+        // Traversal for shadow casting and material collection
+        loadedModel.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
 
-    const domElement = renderer.domElement;
-    domElement.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+            if (child.material) {
+              const mats = Array.isArray(child.material) ? child.material : [child.material];
+              mats.forEach((m) => {
+                if (!loadedMaterialsRef.current.includes(m)) {
+                  loadedMaterialsRef.current.push(m);
+                }
+              });
+            }
+          }
+        });
 
-    const handleTouchStart = (e) => {
-      if (e.touches.length === 1) {
-        isDragging = true;
-        previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        modelGroup.add(loadedModel);
+
+        setIsLoading(false);
+        setLoadingProgress(100);
+        if (onLoadSuccess) onLoadSuccess();
+      },
+      (xhr) => {
+        if (xhr.lengthComputable) {
+          const percent = Math.round((xhr.loaded / xhr.total) * 100);
+          setLoadingProgress(percent);
+          if (onLoading) onLoading(percent);
+        }
+      },
+      (err) => {
+        console.error('[3D Viewer Error] Failed to load GLB model:', targetUrl, err);
+        setIsLoading(false);
+        setLoadError('Failed to load 3D model. Please verify the GLB/GLTF file format.');
+        if (onLoadError) onLoadError(err.message || 'Model load error');
       }
-    };
+    );
 
-    const handleTouchMove = (e) => {
-      if (!isDragging || !modelGroupRef.current || e.touches.length !== 1) return;
-      const deltaX = e.touches[0].clientX - previousMousePosition.x;
-      const deltaY = e.touches[0].clientY - previousMousePosition.y;
-
-      modelGroupRef.current.rotation.y += deltaX * 0.01;
-      modelGroupRef.current.rotation.x += deltaY * 0.005;
-      modelGroupRef.current.rotation.x = Math.max(-0.4, Math.min(0.4, modelGroupRef.current.rotation.x));
-
-      previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    };
-
-    const handleTouchEnd = () => {
-      isDragging = false;
-    };
-
-    domElement.addEventListener('touchstart', handleTouchStart);
-    domElement.addEventListener('touchmove', handleTouchMove);
-    domElement.addEventListener('touchend', handleTouchEnd);
-
-    // 7. Render Loop
+    // 7. Render Animation Loop
     let animationFrameId;
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
 
-      if (isAutoRotating && modelGroupRef.current && !isDragging) {
-        modelGroupRef.current.rotation.y += 0.006 * rotationSpeed;
+      if (controlsRef.current) {
+        controlsRef.current.autoRotate = isAutoRotating;
+        controlsRef.current.autoRotateSpeed = rotationSpeed * 2.0;
+        controlsRef.current.update();
       }
 
       renderer.render(scene, camera);
@@ -350,44 +211,39 @@ export const Viewer3DCanvas = ({
 
     return () => {
       cancelAnimationFrame(animationFrameId);
-      domElement.removeEventListener('mousedown', handleMouseDown);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      domElement.removeEventListener('touchstart', handleTouchStart);
-      domElement.removeEventListener('touchmove', handleTouchMove);
-      domElement.removeEventListener('touchend', handleTouchEnd);
       window.removeEventListener('resize', handleResize);
+      if (controlsRef.current) controlsRef.current.dispose();
       renderer.dispose();
     };
-  }, [product]);
+  }, [targetUrl]);
 
   // Handle Preset Angle Controls ('front', 'back', 'side', 'top')
   useEffect(() => {
-    if (!modelGroupRef.current) return;
+    if (!modelGroupRef.current || !controlsRef.current) return;
     if (presetAngle === 'front') {
       modelGroupRef.current.rotation.set(0, 0, 0);
     } else if (presetAngle === 'back') {
-      modelGroupRef.current.rotation.set(0, Math.PI, 0); // 180° rotation to view rear upholstery
+      modelGroupRef.current.rotation.set(0, Math.PI, 0);
     } else if (presetAngle === 'side') {
-      modelGroupRef.current.rotation.set(0, Math.PI / 2, 0); // 90° rotation for side view
+      modelGroupRef.current.rotation.set(0, Math.PI / 2, 0);
     } else if (presetAngle === 'top') {
-      modelGroupRef.current.rotation.set(Math.PI / 4, 0, 0); // Angled top view
+      modelGroupRef.current.rotation.set(Math.PI / 4, 0, 0);
     }
   }, [presetAngle]);
 
-  // Update dynamic camera parameters
+  // Update dynamic camera zoom & elevation
   useEffect(() => {
-    if (cameraRef.current) {
+    if (cameraRef.current && controlsRef.current) {
       cameraRef.current.position.z = zoomFactor;
-      cameraRef.current.position.y = 1.1 + elevationOffset;
-      cameraRef.current.lookAt(0, 0, 0);
+      cameraRef.current.position.y = 1.2 + elevationOffset;
+      controlsRef.current.update();
     }
   }, [zoomFactor, elevationOffset]);
 
-  // Update material colors & wireframe
+  // Update material tint & wireframe mode
   useEffect(() => {
     const activeColor = materialColors[selectedMaterial] || materialColors.tan;
-    interactiveMaterialsRef.current.forEach(mat => {
+    loadedMaterialsRef.current.forEach((mat) => {
       if (mat) {
         if (mat.color && selectedMaterial !== 'tan') {
           mat.color.setHex(activeColor);
@@ -400,7 +256,35 @@ export const Viewer3DCanvas = ({
 
   return (
     <div className="w-full h-full relative cursor-grab active:cursor-grabbing select-none">
+      
+      {/* Loading Spinner & Progress Bar Overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 bg-[#FBF9F5]/90 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-6 text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-[#E5DEC9] border-t-[#A17A16] rounded-full animate-spin" />
+          <div className="space-y-1">
+            <h4 className="font-serif font-bold text-gray-900 text-base">Loading 3D Furniture Model...</h4>
+            <p className="text-xs font-mono text-gray-500">{loadingProgress}% downloaded</p>
+          </div>
+          <div className="w-48 bg-gray-200 h-1.5 rounded-full overflow-hidden">
+            <div className="bg-[#A17A16] h-full transition-all duration-200" style={{ width: `${loadingProgress}%` }} />
+          </div>
+        </div>
+      )}
+
+      {/* Error Fallback Card Overlay */}
+      {loadError && !isLoading && (
+        <div className="absolute inset-0 bg-[#FBF9F5] z-20 flex flex-col items-center justify-center p-6 text-center space-y-3">
+          <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center">
+            <span className="font-mono font-bold text-xl">!</span>
+          </div>
+          <h4 className="font-serif font-bold text-gray-900 text-base">3D Model Preview Unavailable</h4>
+          <p className="text-xs text-gray-500 max-w-sm leading-relaxed">{loadError}</p>
+        </div>
+      )}
+
+      {/* 3D WebGL Canvas Container */}
       <div ref={mountRef} className="w-full h-full" />
     </div>
   );
 };
+

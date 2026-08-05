@@ -14,7 +14,7 @@ import { CheckoutPage } from './features/f13-checkout/CheckoutPage.jsx';
 import { GeoMapPage } from './features/f9-geo-map/GeoMapPage.jsx'; // F9 — Geo Map Finder (Injamamul Haque Fahim)
 
 import { seedProductsData } from '../models/seedData.js';
-import { Box, ShieldCheck, MapPin, Truck, Grid, Lock, CheckCircle } from 'lucide-react';
+import { Box, ShieldCheck, MapPin, Truck, Grid, Lock, CheckCircle, Trash2 } from 'lucide-react';
 
 export default function App() {
   const [products, setProducts] = useState(seedProductsData);
@@ -106,7 +106,7 @@ export default function App() {
   }, [user]);
 
   // Fetch real backend products
-  useEffect(() => {
+  const fetchProducts = () => {
     fetch('/api/products')
       .then(res => res.json())
       .then(data => {
@@ -115,7 +115,11 @@ export default function App() {
         }
       })
       .catch(() => {});
-  }, []);
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [activeTab, user]);
 
   const open3DInspector = (productToInspect = null) => {
     if (productToInspect) {
@@ -192,6 +196,19 @@ export default function App() {
     localStorage.removeItem('decorate3d_user');
     setActiveTab('marketplace');
     showCenteredNotification('info', 'Logged Out', 'You have been successfully logged out of your account.');
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    try {
+      await fetch(`/api/products/${productId}`, { method: 'DELETE' });
+    } catch (err) {
+      console.warn('API delete error, clearing locally:', err);
+    }
+    setProducts(prev => prev.filter(p => p._id !== productId));
+    if (selectedProduct && selectedProduct._id === productId) {
+      setSelectedProduct(null);
+    }
+    showCenteredNotification('success', 'Furniture Listing Deleted', 'The selected product has been removed from your seller listings.');
   };
 
   const handleUpdateProfile = (updatedUser) => {
@@ -282,23 +299,60 @@ export default function App() {
             </div>
 
             <div className="bg-white rounded-3xl p-6 border border-[#E5DEC9] shadow-sm space-y-4">
-              <h3 className="font-serif text-xl font-bold text-gray-900">Your Listed 3D Furniture Items</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {products.map(p => (
-                  <div key={p._id} className="border border-[#E5DEC9] rounded-2xl p-3 space-y-2 bg-[#FBF9F5]">
-                    <img src={p.images[0]} alt={p.title} className="w-full h-36 object-cover rounded-xl" />
-                    <h4 className="font-serif font-bold text-sm text-gray-900 truncate">{p.title}</h4>
-                    <span className="font-mono text-sm font-bold text-[#A17A16]">${p.price}</span>
-                    <button
-                      onClick={() => open3DInspector(p)}
-                      className="w-full bg-white hover:bg-gray-100 text-xs font-bold py-2 rounded-xl border border-[#E5DEC9] flex items-center justify-center space-x-1"
-                    >
-                      <Box className="w-3.5 h-3.5 text-[#A17A16]" />
-                      <span>INSPECT 3D MODEL</span>
-                    </button>
-                  </div>
-                ))}
+              <div className="flex items-center justify-between">
+                <h3 className="font-serif text-xl font-bold text-gray-900">Your Listed 3D Furniture Items</h3>
+                <span className="text-xs font-mono text-gray-500">{products.length} active listings</span>
               </div>
+
+              {products.length === 0 ? (
+                <div className="py-12 text-center text-xs text-gray-400 font-mono">
+                  No furniture items listed yet. Click "+ LIST NEW ITEM WITH 3D SCANNER" above to list your first item.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {products.map(p => (
+                    <div key={p._id} className="border border-[#E5DEC9] rounded-2xl p-3 space-y-2.5 bg-[#FBF9F5] flex flex-col justify-between">
+                      <div className="space-y-2">
+                        <div className="relative">
+                          <img src={p.images[0]} alt={p.title} className="w-full h-36 object-cover rounded-xl" />
+                          <span className="absolute top-2 right-2 gold-badge text-[9px] px-2 py-0.5 rounded-full uppercase">
+                            {p.category}
+                          </span>
+                        </div>
+                        <h4 className="font-serif font-bold text-sm text-gray-900 truncate">{p.title}</h4>
+                        <div className="flex justify-between items-center text-xs font-mono">
+                          <span className="font-bold text-[#A17A16]">${p.price}</span>
+                          <span className="text-gray-400">{p.conditionGrade || 'GOOD'}</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5 pt-2 border-t border-[#E5DEC9]/60">
+                        <button
+                          onClick={() => open3DInspector(p)}
+                          className="w-full bg-white hover:bg-gray-100 text-xs font-bold py-2 rounded-xl border border-[#E5DEC9] flex items-center justify-center space-x-1 transition-colors"
+                        >
+                          <Box className="w-3.5 h-3.5 text-[#A17A16]" />
+                          <span>INSPECT 3D MODEL</span>
+                        </button>
+
+                        {/* Delete Seller Item Button */}
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to delete listing "${p.title}"?`)) {
+                              handleDeleteProduct(p._id);
+                            }
+                          }}
+                          className="w-full bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold py-2 rounded-xl border border-rose-200 flex items-center justify-center space-x-1.5 transition-colors"
+                          title="Delete this listed furniture item"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                          <span>DELETE ITEM</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -454,6 +508,7 @@ export default function App() {
         onAddProduct={(newProd) => {
           setProducts(prev => [newProd, ...prev]);
           setSelectedProduct(newProd);
+          fetchProducts();
           showCenteredNotification(
             'success',
             '3D Model Generated & Item Published',

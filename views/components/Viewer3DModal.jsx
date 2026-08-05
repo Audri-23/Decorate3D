@@ -101,8 +101,8 @@ export const Viewer3DModal = ({ product, isOpen, onClose, onAddToCart, onLaunchA
 
         {/* Three.js WebGL Interactive 3D Canvas */}
         <Viewer3DCanvas
+          modelUrl={product.model3D?.url}
           product={product}
-          geometryType={model3D.geometryType}
           selectedMaterial={selectedMaterial}
           isWireframe={isWireframe}
           isAutoRotating={isAutoRotating}

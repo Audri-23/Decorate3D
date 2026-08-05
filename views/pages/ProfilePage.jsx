@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, ShieldCheck, Box, Package, Star, Edit3, LogOut, Check, X, Save } from 'lucide-react';
+import { User, ShieldCheck, Box, Package, Star, Edit3, LogOut, Check, X, Save, Upload } from 'lucide-react';
 
 export const ProfilePage = ({ user, onUpdateProfile, onLogout, openAuthModal }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -31,7 +31,7 @@ export const ProfilePage = ({ user, onUpdateProfile, onLogout, openAuthModal }) 
       ...user,
       name,
       email,
-      avatar: avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      avatar: avatar || '',
       role,
     });
     setIsEditing(false);
@@ -53,11 +53,17 @@ export const ProfilePage = ({ user, onUpdateProfile, onLogout, openAuthModal }) 
       {/* Profile Header */}
       <div className="bg-white rounded-3xl p-8 border border-[#E5DEC9] shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6">
         <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6 text-center sm:text-left">
-          <img
-            src={user.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"}
-            alt={user.name}
-            className="w-24 h-24 rounded-full object-cover border-4 border-[#A17A16] shadow-md"
-          />
+          {user.avatar ? (
+            <img
+              src={user.avatar}
+              alt={user.name}
+              className="w-24 h-24 rounded-full object-cover border-4 border-[#A17A16] shadow-md"
+            />
+          ) : (
+            <div className="w-24 h-24 rounded-full bg-[#1E232A] text-[#A17A16] flex items-center justify-center border-4 border-[#A17A16] shadow-md font-serif text-3xl font-bold">
+              {user.name ? user.name.charAt(0).toUpperCase() : <User className="w-10 h-10" />}
+            </div>
+          )}
 
           <div className="space-y-1">
             <div className="flex items-center justify-center sm:justify-start space-x-2">
@@ -143,15 +149,36 @@ export const ProfilePage = ({ user, onUpdateProfile, onLogout, openAuthModal }) 
 
             <div>
               <label className="block text-xs font-mono font-bold text-gray-700 uppercase mb-1">
-                Profile Avatar Photo URL
+                Profile Photo
               </label>
-              <input
-                type="url"
-                value={avatar}
-                onChange={(e) => setAvatar(e.target.value)}
-                placeholder="https://images.unsplash.com/photo-..."
-                className="w-full px-4 py-2.5 bg-[#FBF9F5] border border-[#E5DEC9] rounded-xl text-sm focus:outline-none focus:border-[#A17A16]"
-              />
+              <div className="flex items-center space-x-3 pt-1">
+                {avatar ? (
+                  <img src={avatar} alt="Avatar Preview" className="w-10 h-10 rounded-full object-cover border-2 border-[#A17A16]" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-[#1E232A] text-[#A17A16] flex items-center justify-center font-bold text-xs">
+                    <User className="w-5 h-5" />
+                  </div>
+                )}
+                <label className="bg-[#F9F4E9] hover:bg-[#E9D3A4] text-[#A17A16] px-4 py-2 rounded-xl text-xs font-bold border border-[#E9D3A4] cursor-pointer flex items-center space-x-2 transition-colors">
+                  <Upload className="w-4 h-4" />
+                  <span>Upload Image File</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          setAvatar(event.target.result);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                </label>
+              </div>
             </div>
 
             <div>

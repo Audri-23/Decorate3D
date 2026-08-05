@@ -29,6 +29,8 @@ export const seedProductsData = [
     },
     has3DModel: true,
     model3D: {
+      url: "/uploads/models/sample_chair.gltf",
+      source: "upload",
       archivalSeries: "Archival Series № 422",
       polygonCount: "124.2k",
       lodLevel: "ULTRA",
@@ -75,6 +77,8 @@ export const seedProductsData = [
     },
     has3DModel: true,
     model3D: {
+      url: "/uploads/models/sample_chair.gltf",
+      source: "upload",
       archivalSeries: "Nordic Edition № 108",
       polygonCount: "86.4k",
       lodLevel: "HIGH",
@@ -121,6 +125,8 @@ export const seedProductsData = [
     },
     has3DModel: true,
     model3D: {
+      url: "/uploads/models/sample_sofa.gltf",
+      source: "upload",
       archivalSeries: "Heritage Collection № 003",
       polygonCount: "198.5k",
       lodLevel: "ULTRA",
@@ -167,6 +173,8 @@ export const seedProductsData = [
     },
     has3DModel: true,
     model3D: {
+      url: "/uploads/models/sample_table.gltf",
+      source: "upload",
       archivalSeries: "Artisan Studio № 77",
       polygonCount: "42.1k",
       lodLevel: "MEDIUM",

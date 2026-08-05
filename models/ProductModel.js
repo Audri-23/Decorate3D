@@ -19,6 +19,8 @@ const productSchema = new mongoose.Schema({
   images: [{ type: String }],
   has3DModel: { type: Boolean, default: true },
   model3D: {
+    url: { type: String, default: '' },
+    source: { type: String, default: 'upload' }, // 'upload' | 'ai_generated'
     archivalSeries: { type: String, default: 'Archival Series № 422' },
     polygonCount: { type: String, default: '124.2k' },
     lodLevel: { type: String, default: 'ULTRA' },
