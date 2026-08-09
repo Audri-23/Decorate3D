@@ -1,11 +1,5 @@
-/**
- * Feature: Buyers can search and locate furniture listings within a local
- * geographical radius using GPS coordinates and Haversine distance calculation.
- */
-
 import { seedProductsData } from '../../models/seedData.js';
 
-// Dhaka-area geo-coordinates for each seed product seller location
 const PRODUCT_GEO_DATA = {
   '66b1a1112233445566778899': {
     lat: 23.8103,
@@ -23,7 +17,7 @@ const PRODUCT_GEO_DATA = {
     lat: 23.7461,
     lng: 90.3742,
     address: 'Dhanmondi, Dhaka',
-    sellerName: 'Injamamul Haque Fahim'
+    sellerName: 'Fahim Ahmed'
   },
   '66b1a4445566778899aabbcc': {
     lat: 23.8759,
@@ -33,12 +27,8 @@ const PRODUCT_GEO_DATA = {
   }
 };
 
-/**
- * Haversine Formula — Calculates the great-circle distance between
- * two GPS coordinates in kilometres.
- */
 function haversineDistanceKm(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Earth's radius in kilometres
+  const R = 6371;
   const toRad = (deg) => (deg * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
@@ -52,18 +42,6 @@ function haversineDistanceKm(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-/**
- * GET /api/geo/listings
- * Query Params:
- *   lat       — Buyer's GPS latitude  (required)
- *   lng       — Buyer's GPS longitude (required)
- *   radius    — Search radius in km   (default: 15)
- *   category  — Filter by category    (optional)
- *   condition — Filter by condition   (optional)
- *
- * Returns all listings within the radius, sorted by distance ascending,
- * each enriched with { lat, lng, distanceKm, address } geo data.
- */
 export const getGeoListings = (req, res) => {
   try {
     const {
@@ -92,7 +70,6 @@ export const getGeoListings = (req, res) => {
       });
     }
 
-    // Enrich products with geo data and filter by radius
     const geoEnrichedListings = seedProductsData
       .map((product) => {
         const geo = PRODUCT_GEO_DATA[product._id];
@@ -111,7 +88,7 @@ export const getGeoListings = (req, res) => {
             lat: geo.lat,
             lng: geo.lng,
             address: geo.address,
-            distanceKm: Math.round(distanceKm * 10) / 10 // 1 decimal place
+            distanceKm: Math.round(distanceKm * 10) / 10
           }
         };
       })
@@ -126,7 +103,7 @@ export const getGeoListings = (req, res) => {
 
     return res.status(200).json({
       success: true,
-      feature: 'F9 — Geo Map Finder (Injamamul Haque Fahim)',
+      feature: 'Geo Map Finder',
       buyerLocation: { lat: buyerLat, lng: buyerLng },
       searchRadiusKm: searchRadius,
       totalFound: geoEnrichedListings.length,
@@ -140,11 +117,6 @@ export const getGeoListings = (req, res) => {
   }
 };
 
-/**
- * GET /api/geo/product-locations
- * Returns all product seller pin coordinates for full-map overview
- * (no radius filter — used to initialise the map with all markers)
- */
 export const getAllProductLocations = (req, res) => {
   try {
     const allPins = seedProductsData.map((product) => {
@@ -168,7 +140,7 @@ export const getAllProductLocations = (req, res) => {
 
     return res.status(200).json({
       success: true,
-      feature: 'F9 — Geo Map Finder (Injamamul Haque Fahim)',
+      feature: 'Geo Map Finder',
       totalPins: allPins.length,
       pins: allPins
     });

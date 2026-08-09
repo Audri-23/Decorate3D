@@ -11,7 +11,7 @@ import { AuthModal } from './components/AuthModal.jsx';
 import { SellerListingModal } from './components/SellerListingModal.jsx';
 import { CenteredNotification } from './components/CenteredNotification.jsx';
 import { CheckoutPage } from './features/f13-checkout/CheckoutPage.jsx';
-import { GeoMapPage } from './features/f9-geo-map/GeoMapPage.jsx'; // F9 — Geo Map Finder (Injamamul Haque Fahim)
+import { GeoMapPage } from './features/f9-geo-map/GeoMapPage.jsx';
 
 import { seedProductsData } from '../models/seedData.js';
 import { Box, ShieldCheck, MapPin, Truck, Grid, Lock, CheckCircle, Trash2 } from 'lucide-react';
@@ -433,7 +433,7 @@ export default function App() {
           </div>
         )}
 
-        {/* F9 (Injamamul Haque Fahim) — Geo Map Finder: Local Radius Search */}
+        {/* Geo Map Finder: Local Radius Search */}
         {activeTab === 'geo_map' && (
           <GeoMapPage
             onSelectProduct={(p) => {

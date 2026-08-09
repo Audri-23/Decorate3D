@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, ShieldCheck, Box, Eye, Heart, Share2, ShoppingCart, MapPin, Truck, ChevronRight } from 'lucide-react';
+import { ShippingQuoteWidget } from '../features/f10-shipping-quote/ShippingQuoteWidget.jsx';
 
 export const ProductDetailPage = ({ product, open3DInspector, onAddToCart, onLaunchRoomPlanner }) => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -181,6 +182,8 @@ export const ProductDetailPage = ({ product, open3DInspector, onAddToCart, onLau
               <span>OPEN 360° 3D INSPECTOR CANVAS</span>
             </button>
           </div>
+
+          <ShippingQuoteWidget product={product} />
 
         </div>
       </div>

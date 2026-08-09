@@ -1,13 +1,3 @@
-/**
- * F9 — Geo Map Finder Page
- * Assigned to: Injamamul Haque Fahim
- *
- * Buyers can search and locate furniture listings within a local geographical
- * radius. Uses Leaflet.js + OpenStreetMap (100% free, no API key required)
- * to display active seller listings as pins on an interactive map based on
- * the buyer's current GPS location and custom search radius settings.
- */
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { fetchGeoListings, fetchAllProductLocations } from './geoApi.js';
 import {
@@ -324,7 +314,7 @@ export function GeoMapPage({ onSelectProduct }) {
             </div>
             <div>
               <span className="text-[10px] font-mono tracking-widest text-[#A17A16] uppercase font-bold block">
-                F9 — GEO MAP FINDER · Injamamul Haque Fahim
+                GEO MAP FINDER
               </span>
               <p className="text-white font-serif text-base font-bold leading-tight">
                 Local Furniture Radius Search
@@ -526,7 +516,7 @@ export function GeoMapPage({ onSelectProduct }) {
               <ShieldCheck className="w-3 h-3 text-emerald-500" />
               <span>Escrow Protected</span>
             </span>
-            <span className="text-[#A17A16] font-bold">Decorate3D · F9</span>
+            <span className="text-[#A17A16] font-bold">Decorate3D</span>
           </div>
         </aside>
 
@@ -543,7 +533,7 @@ export function GeoMapPage({ onSelectProduct }) {
                 <Loader2 className="w-7 h-7 text-[#A17A16] animate-spin" />
               </div>
               <p className="font-serif font-bold text-gray-700">Loading Map…</p>
-              <p className="text-xs text-gray-400">Powered by OpenStreetMap — No API key required</p>
+              <p className="text-xs text-gray-400">Powered by OpenStreetMap</p>
             </div>
           )}
 

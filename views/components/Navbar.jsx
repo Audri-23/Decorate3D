@@ -43,7 +43,7 @@ export const Navbar = ({ activeTab, setActiveTab, cartCount, openAuthModal, user
               <span>3D Room Planner</span>
             </button>
 
-            {/*Geo Map Finder (Injamamul Haque Fahim) */}
+            {/*Geo Map Finder*/}
             <button
               onClick={() => setActiveTab('geo_map')}
               className={`text-sm font-medium transition-colors ${

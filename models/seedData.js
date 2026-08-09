@@ -139,7 +139,7 @@ export const seedProductsData = [
       geometryType: "sofa"
     },
     seller: {
-      name: "Injamamul Haque Fahim",
+      name: "Fahim Ahmed",
       rating: 4.8,
       verified: true,
       location: "Dhanmondi, Dhaka"
