@@ -12,6 +12,7 @@ import authRoutes from './routes/authRoutes.js';
 import moduleRoutes from './routes/moduleRoutes.js';
 import stripeRoutes from './features/f13-stripe-checkout/stripe.routes.js';
 import geoRoutes from './features/f9-geo-map/geo.routes.js';
+import roomPlannerRoutes from './routes/roomPlannerRoutes.js';
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/modules', moduleRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/geo', geoRoutes);
+app.use('/api/room-planner', roomPlannerRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({

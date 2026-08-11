@@ -458,6 +458,7 @@ export default function App() {
         product={selectedProduct}
         isOpen={isRoomPlannerOpen}
         onClose={closeRoomPlanner}
+        initialMarketplaceProducts={products}
       />
 
       {/* Role-Aware Auth Modal */}

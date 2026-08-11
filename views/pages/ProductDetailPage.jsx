@@ -181,6 +181,14 @@ export const ProductDetailPage = ({ product, open3DInspector, onAddToCart, onLau
               <Box className="w-4 h-4 text-[#A17A16]" />
               <span>OPEN 360° 3D INSPECTOR CANVAS</span>
             </button>
+
+            <button
+              onClick={() => onLaunchRoomPlanner(product)}
+              className="w-full bg-[#1E232A] hover:bg-[#2A313B] text-white font-mono font-bold py-3.5 rounded-xl text-sm border border-[#E9D3A4]/40 transition-all flex items-center justify-center space-x-2 shadow"
+            >
+              <Sparkles className="w-4 h-4 text-[#E9D3A4]" />
+              <span>ADD REAL 3D ITEM TO ROOM PLANNER</span>
+            </button>
           </div>
 
           <ShippingQuoteWidget product={product} />

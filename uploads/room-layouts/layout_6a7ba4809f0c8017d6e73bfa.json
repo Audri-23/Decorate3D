@@ -1,0 +1,235 @@
+{
+  "roomDimensions": {
+    "width": 7,
+    "length": 8.5,
+    "height": 3,
+    "unit": "m"
+  },
+  "wallCustomization": {
+    "paintColor": "#EAE6E1",
+    "wallMaterial": "plaster"
+  },
+  "floorCustomization": {
+    "floorMaterial": "hardwood_oak",
+    "tintColor": "#C29B72"
+  },
+  "_id": "6a7ba4809f0c8017d6e73bfa",
+  "userId": "guest_user",
+  "layoutName": "My Custom Floor Plan",
+  "openings": [],
+  "placedItems": [
+    {
+      "position": {
+        "x": -2.7,
+        "y": 0,
+        "z": -1
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1.1,
+        "y": 1.1,
+        "z": 1.1
+      },
+      "dimensions": {
+        "width": 0.9,
+        "depth": 0.9,
+        "height": 0.85
+      },
+      "id": "item_1786487688381_y4g6",
+      "productId": null,
+      "title": "Vintage Divan",
+      "category": "Sofas",
+      "placementType": "FLOOR",
+      "modelUrl": "/uploads/models/victorian_lounge_sofa-1785967477606-384996845.glb",
+      "customFrameImageUrl": null,
+      "_id": "6a7ba4809f0c8017d6e73bfb"
+    },
+    {
+      "position": {
+        "x": -0.1,
+        "y": 0,
+        "z": -3.1
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "scale": {
+        "x": 1.15,
+        "y": 1.15,
+        "z": 1.15
+      },
+      "dimensions": {
+        "width": 0.9,
+        "depth": 0.9,
+        "height": 0.85
+      },
+      "id": "item_1786487716049_i22k",
+      "productId": null,
+      "title": "sofa",
+      "category": "Sofas & Seating",
+      "placementType": "FLOOR",
+      "modelUrl": "/uploads/models/custom_1786482226797_674214230.glb",
+      "customFrameImageUrl": null,
+      "_id": "6a7ba4809f0c8017d6e73bfc"
+    },
+    {
+      "position": {
+        "x": -2.5,
+        "y": 0,
+        "z": -3.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1.65,
+        "y": 1.65,
+        "z": 1.65
+      },
+      "dimensions": {
+        "width": 0.9,
+        "depth": 0.9,
+        "height": 0.85
+      },
+      "id": "item_1786487804429_fawn",
+      "productId": null,
+      "title": "monstera deliciosa potted mid century plant",
+      "category": "Indoor Plants",
+      "placementType": "FLOOR",
+      "modelUrl": "/uploads/models/custom_1786485133448_627941486.glb",
+      "customFrameImageUrl": null,
+      "_id": "6a7ba4809f0c8017d6e73bfd"
+    },
+    {
+      "position": {
+        "x": -2.8,
+        "y": 0,
+        "z": 0.6
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 2.5,
+        "y": 2.5,
+        "z": 2.5
+      },
+      "dimensions": {
+        "width": 0.9,
+        "depth": 0.9,
+        "height": 0.85
+      },
+      "id": "item_1786487845981_ql9z",
+      "productId": null,
+      "title": "belgrave side table oak",
+      "category": "Tables & Desks",
+      "placementType": "FLOOR",
+      "modelUrl": "/uploads/models/custom_1786485463393_186035732.glb",
+      "customFrameImageUrl": null,
+      "_id": "6a7ba4809f0c8017d6e73bfe"
+    },
+    {
+      "position": {
+        "x": -0.1,
+        "y": 0,
+        "z": -1.3
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1.25,
+        "y": 1.25,
+        "z": 1.25
+      },
+      "dimensions": {
+        "width": 0.9,
+        "depth": 0.9,
+        "height": 0.85
+      },
+      "id": "item_1786487866653_su1z",
+      "productId": null,
+      "title": "furniture center tables",
+      "category": "Tables & Desks",
+      "placementType": "FLOOR",
+      "modelUrl": "/uploads/models/custom_1786485258025_858201974.glb",
+      "customFrameImageUrl": null,
+      "_id": "6a7ba4809f0c8017d6e73bff"
+    },
+    {
+      "position": {
+        "x": 2.5,
+        "y": 0,
+        "z": -3.3
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1.25,
+        "y": 1.25,
+        "z": 1.25
+      },
+      "dimensions": {
+        "width": 0.9,
+        "depth": 0.9,
+        "height": 0.85
+      },
+      "id": "item_1786487888949_7mq6",
+      "productId": null,
+      "title": "tree lamp",
+      "category": "Lamps & Lighting",
+      "placementType": "FLOOR",
+      "modelUrl": "/uploads/models/custom_1786486457801_894065823.glb",
+      "customFrameImageUrl": null,
+      "_id": "6a7ba4809f0c8017d6e73c00"
+    },
+    {
+      "position": {
+        "x": -0.2,
+        "y": 1.6,
+        "z": -4.1
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 1.45,
+        "y": 1.45,
+        "z": 1.45
+      },
+      "dimensions": {
+        "width": 0.9,
+        "depth": 0.9,
+        "height": 0.85
+      },
+      "id": "item_1786487913813_34ho",
+      "productId": null,
+      "title": "photo of drum corps framed   preview",
+      "category": "Wall Art & Mirrors",
+      "placementType": "WALL",
+      "modelUrl": "/uploads/models/custom_1786484990417_539274491.glb",
+      "customFrameImageUrl": null,
+      "_id": "6a7ba4809f0c8017d6e73c01"
+    }
+  ],
+  "createdAt": "2026-08-11T22:38:56.991Z",
+  "updatedAt": "2026-08-11T22:39:56.780Z",
+  "__v": 0
+}
