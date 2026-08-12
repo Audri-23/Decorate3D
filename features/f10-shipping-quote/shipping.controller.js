@@ -17,7 +17,7 @@ const SELLER_GEO_DATA = {
     lat: 23.7461,
     lng: 90.3742,
     address: 'Dhanmondi, Dhaka',
-    sellerName: 'Fahim Ahmed'
+    sellerName: 'Injamamul Haque Fahim'
   },
   '66b1a4445566778899aabbcc': {
     lat: 23.8759,
