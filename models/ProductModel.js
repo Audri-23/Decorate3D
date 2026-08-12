@@ -37,10 +37,12 @@ const productSchema = new mongoose.Schema({
   },
   seller: {
     name: { type: String, default: 'Muhtasim Ahmed' },
+    email: { type: String, default: 'seller@decorate3d.com' },
     rating: { type: Number, default: 4.9 },
     verified: { type: Boolean, default: true },
     location: { type: String, default: 'Dhaka, Bangladesh' }
   },
+  sellerEmail: { type: String, default: 'seller@decorate3d.com' },
   createdAt: { type: Date, default: Date.now }
 });
 

@@ -5,6 +5,10 @@ const f13OrderSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  sellerEmail: {
+    type: String,
+    default: 'seller@decorate3d.com'
+  },
   sellerStripeAccountId: {
     type: String,
     default: 'acct_1TestSellerAccount123'

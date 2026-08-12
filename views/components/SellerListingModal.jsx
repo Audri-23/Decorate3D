@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, Upload, CheckCircle, Sparkles, Box, ShieldCheck, RefreshCw, Layers, AlertCircle, FileCode } from 'lucide-react';
 import { Viewer3DCanvas } from './Viewer3DCanvas.jsx';
 
-export const SellerListingModal = ({ isOpen, onClose, onAddProduct }) => {
+export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
   const [activeStep, setActiveStep] = useState('details'); // 'details' or 'multi_angle_capture'
   const [captureMethod, setCaptureMethod] = useState('upload'); // 'upload' or 'camera'
 
@@ -234,11 +234,13 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct }) => {
           geometryType: category.toLowerCase().includes('sofa') ? 'sofa' : (category.toLowerCase().includes('table') ? 'table' : 'lounge_chair')
         },
         seller: {
-          name: 'Verified Seller User',
+          name: user?.name || 'Verified Seller User',
+          email: user?.email || 'seller@decorate3d.com',
           rating: 5.0,
           verified: true,
           location: 'Dhaka, Bangladesh'
-        }
+        },
+        sellerEmail: user?.email || 'seller@decorate3d.com'
       };
 
       // Post product to backend API

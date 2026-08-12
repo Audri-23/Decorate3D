@@ -8,7 +8,7 @@ const PLATFORM_COMMISSION_PERCENTAGE = 10;
 
 export async function createPaymentIntent(req, res) {
   try {
-    const { amount, productTitle, productId, buyerEmail, sellerStripeAccountId } = req.body;
+    const { amount, productTitle, productId, buyerEmail, sellerEmail, sellerStripeAccountId } = req.body;
 
     if (!amount || amount <= 0) {
       return res.status(400).json({ success: false, error: 'Valid payment amount is required.' });
@@ -53,6 +53,7 @@ export async function createPaymentIntent(req, res) {
 
     const orderPayload = {
       buyerEmail: buyerEmail || 'buyer@example.com',
+      sellerEmail: sellerEmail || 'seller@decorate3d.com',
       sellerStripeAccountId: targetSellerAccountId,
       productTitle: productTitle || 'Furniture Item',
       productId: productId || 'item_123',

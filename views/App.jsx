@@ -12,6 +12,8 @@ import { SellerListingModal } from './components/SellerListingModal.jsx';
 import { CenteredNotification } from './components/CenteredNotification.jsx';
 import { CheckoutPage } from './features/f13-checkout/CheckoutPage.jsx';
 import { GeoMapPage } from './features/f9-geo-map/GeoMapPage.jsx';
+import { EscrowVaultPage } from './features/f14-escrow-holding/EscrowVaultPage.jsx';
+import { SellerEscrowPanel } from './features/f14-escrow-holding/SellerEscrowPanel.jsx';
 
 import { seedProductsData } from '../models/seedData.js';
 import { Box, ShieldCheck, MapPin, Truck, Grid, Lock, CheckCircle, Trash2 } from 'lucide-react';
@@ -39,7 +41,7 @@ export default function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [cart, setCart] = useState([seedProductsData[0]]);
+  const [cart, setCart] = useState([]);
 
   const showCenteredNotification = (type, title, message) => {
     setNotification({ type, title, message });
@@ -433,6 +435,7 @@ export default function App() {
           </div>
         )}
 
+
         {/* Geo Map Finder: Local Radius Search */}
         {activeTab === 'geo_map' && (
           <GeoMapPage
@@ -441,6 +444,16 @@ export default function App() {
               setActiveTab('product_detail');
             }}
           />
+        )}
+
+        {/* Escrow Vault & Holding Tracker — Buyer side */}
+        {activeTab === 'escrow_vault' && (
+          <EscrowVaultPage user={user} />
+        )}
+
+        {/* Seller Escrow Release Panel — Seller enters buyer OTP to unlock funds */}
+        {activeTab === 'seller_escrow' && (
+          <SellerEscrowPanel user={user} />
         )}
       </main>
 
@@ -504,6 +517,7 @@ export default function App() {
 
       {/* Seller Multi-Angle 3D Listing Modal */}
       <SellerListingModal
+        user={user}
         isOpen={isSellerListingOpen}
         onClose={() => setIsSellerListingOpen(false)}
         onAddProduct={(newProd) => {

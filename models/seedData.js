@@ -44,6 +44,7 @@ export const seedProductsData = [
     },
     seller: {
       name: "Muhtasim Ahmed",
+      email: "muhtasim@decorate3d.com",
       rating: 4.9,
       verified: true,
       location: "Dhaka, Bangladesh"
@@ -92,6 +93,7 @@ export const seedProductsData = [
     },
     seller: {
       name: "Ashfaq Habib Rafi",
+      email: "ashfaq@decorate3d.com",
       rating: 5.0,
       verified: true,
       location: "Gulshan, Dhaka"
@@ -140,6 +142,7 @@ export const seedProductsData = [
     },
     seller: {
       name: "Fahim Ahmed",
+      email: "fahim@decorate3d.com",
       rating: 4.8,
       verified: true,
       location: "Dhanmondi, Dhaka"
@@ -188,6 +191,7 @@ export const seedProductsData = [
     },
     seller: {
       name: "Shouvik Banik",
+      email: "shouvik.banik@bracu.ac.bd",
       rating: 4.9,
       verified: true,
       location: "Uttara, Dhaka"

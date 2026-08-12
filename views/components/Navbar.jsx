@@ -54,6 +54,36 @@ export const Navbar = ({ activeTab, setActiveTab, cartCount, openAuthModal, user
             >
               <span>Map Search</span>
             </button>
+
+            {/* Escrow Vault — only show when user is logged in as buyer */}
+            {user && user.role === 'buyer' && (
+              <button
+                onClick={() => setActiveTab('escrow_vault')}
+                className={`text-sm font-medium transition-colors flex items-center space-x-1 ${
+                  activeTab === 'escrow_vault'
+                    ? 'text-[#1E232A] font-bold border-b-2 border-[#A17A16] pb-1'
+                    : 'text-gray-600 hover:text-[#A17A16]'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Escrow Vault</span>
+              </button>
+            )}
+
+            {/* Seller Escrow Panel — only show when user is logged in as seller */}
+            {user && user.role === 'seller' && (
+              <button
+                onClick={() => setActiveTab('seller_escrow')}
+                className={`text-sm font-medium transition-colors flex items-center space-x-1 ${
+                  activeTab === 'seller_escrow'
+                    ? 'text-[#1E232A] font-bold border-b-2 border-[#A17A16] pb-1'
+                    : 'text-gray-600 hover:text-[#A17A16]'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Escrow Release</span>
+              </button>
+            )}
           </nav>
 
           {/* Right Actions: Cart & Login/Profile */}

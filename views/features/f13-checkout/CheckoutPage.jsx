@@ -24,6 +24,16 @@ export function CheckoutPage({ cart = [], isOpen, onClose, onPaymentSuccess, buy
   const [cvc, setCvc] = useState('123');
   const [zipCode, setZipCode] = useState('10001');
 
+  // Reset state whenever the modal is opened
+  React.useEffect(() => {
+    if (isOpen) {
+      setPaymentCompleted(false);
+      setOrderSummary(null);
+      setErrorMessage('');
+      setLoading(false);
+    }
+  }, [isOpen]);
+
   if (!isOpen || !cart || cart.length === 0) return null;
 
   const totalItemsPrice = cart.reduce((sum, item) => sum + Number(item.price || 0), 0);
@@ -50,6 +60,7 @@ export function CheckoutPage({ cart = [], isOpen, onClose, onPaymentSuccess, buy
         productTitle: combinedTitle,
         productId: cart.map(i => i._id || i.id).join(','),
         buyerEmail: buyerUser?.email || 'buyer@decorate3d.com',
+        sellerEmail: cart[0]?.seller?.email || cart[0]?.sellerEmail || 'seller@decorate3d.com',
         sellerStripeAccountId: cart[0]?.sellerStripeAccountId || 'acct_1TestSellerAccount123'
       });
 
