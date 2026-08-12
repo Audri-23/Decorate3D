@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, Upload, CheckCircle, Sparkles, Box, ShieldCheck, RefreshCw, Layers, AlertCircle, FileCode } from 'lucide-react';
 import { Viewer3DCanvas } from './Viewer3DCanvas.jsx';
+import { DamageAssessorWidget } from '../features/f1-damage-assessment/DamageAssessorWidget.jsx';
 
 export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
   const [activeStep, setActiveStep] = useState('details'); // 'details' or 'multi_angle_capture'
@@ -402,6 +403,12 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
                     />
                   </div>
                 </div>
+
+                {/* AI Vision Damage Assessor */}
+                <DamageAssessorWidget
+                  currentPhoto={angles.front?.startsWith('data:') ? angles.front : null}
+                  onApplyCondition={(grade) => setConditionGrade(grade)}
+                />
 
                 {/* AI pricing assistant panel */}
                 <div className="p-5 bg-[#F9F4E9]/50 border border-[#E9D3A4]/60 rounded-2xl space-y-4">

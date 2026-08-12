@@ -14,6 +14,7 @@ import stripeRoutes from './features/f13-stripe-checkout/stripe.routes.js';
 import escrowRoutes from './features/f14-escrow-holding/escrow.routes.js';
 import geoRoutes from './features/f9-geo-map/geo.routes.js';
 import roomPlannerRoutes from './routes/roomPlannerRoutes.js';
+import damageRoutes from './features/f1-damage-assessment/damage.routes.js';
 
 dotenv.config();
 
@@ -39,6 +40,7 @@ app.use('/api/stripe', stripeRoutes);
 app.use('/api/escrow', escrowRoutes);
 app.use('/api/geo', geoRoutes);
 app.use('/api/room-planner', roomPlannerRoutes);
+app.use('/api/modules/m1/ai-damage-assessor', damageRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({
