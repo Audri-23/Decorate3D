@@ -53,34 +53,28 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // Generate 6-digit 2FA OTP Code & Send Real Email
-    const otpCode = generateOTP();
-    console.log(`[Email 2FA] Generated OTP for ${cleanEmail} (${targetRole}): ${otpCode}`);
-    const sessionKey = `${cleanEmail}_${targetRole}`;
-    activeOTPSessions.set(sessionKey, {
-      type: 'login',
-      otpCode: otpCode,
-      user: user,
-      role: targetRole,
-      createdAt: Date.now()
-    });
+    // Issue Signed JWT Token directly (no 2FA OTP for login)
+    const jwtSecret = process.env.JWT_SECRET || 'decorate3d_jwt_secret_key';
+    const token = jwt.sign(
+      { id: user._id || user.id, email: user.email, role: user.role },
+      jwtSecret,
+      { expiresIn: '7d' }
+    );
 
-    // Dispatch Real Email via Nodemailer
-    const emailResult = await sendOTPEmail(cleanEmail, otpCode, user.name);
-
-    if (!emailResult.success) {
-      return res.status(500).json({
-        success: false,
-        message: `Failed to send 2FA verification email: ${emailResult.error || 'SMTP Error'}`
-      });
-    }
+    const responseUser = {
+      id: user._id || user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      avatar: user.avatar || '',
+      token: token
+    };
 
     return res.status(200).json({
       success: true,
-      requiresOTP: true,
-      message: `2FA Verification OTP sent to ${cleanEmail} for ${targetRole.toUpperCase()} login`,
-      email: cleanEmail,
-      role: targetRole
+      requiresOTP: false,
+      message: `Login successful as ${user.role.toUpperCase()}!`,
+      user: responseUser
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

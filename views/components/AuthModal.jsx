@@ -74,6 +74,13 @@ export const AuthModal = ({ isOpen, onClose, onLoginSuccess, initialRole = 'buye
           '2FA Email Verification Sent',
           `A 6-Digit Verification OTP code has been dispatched to ${email}. Please check your email inbox.`
         );
+      } else {
+        // Direct success!
+        showNotification('success', 'Authenticated Successfully', data.message || 'Access Granted');
+        setTimeout(() => {
+          onLoginSuccess(data.user);
+          onClose();
+        }, 800);
       }
     } catch (err) {
       showNotification('error', 'Network Error', 'Could not connect to authentication server.');

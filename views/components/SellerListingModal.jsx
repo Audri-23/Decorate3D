@@ -29,17 +29,17 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
   const [isCalculatingPrice, setIsCalculatingPrice] = useState(false);
   const [pricingError, setPricingError] = useState(null);
 
-  // 4 Key Angles Photos (Front, Back, Side, Top)
+  // 4 Key Angles Photos (Front, Back, Left, Right)
   const [angles, setAngles] = useState({
     front: 'https://images.unsplash.com/photo-1580481072645-022f9a6d1276?w=800&auto=format&fit=crop&q=80',
     back: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&auto=format&fit=crop&q=80',
-    side: 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=800&auto=format&fit=crop&q=80',
-    top: 'https://images.unsplash.com/photo-1580481072645-022f9a6d1276?w=800&auto=format&fit=crop&q=80'
+    left: 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=800&auto=format&fit=crop&q=80',
+    right: 'https://images.unsplash.com/photo-1580481072645-022f9a6d1276?w=800&auto=format&fit=crop&q=80'
   });
 
   // Camera State
   const [isCameraActive, setIsCameraActive] = useState(false);
-  const [activeAngleTarget, setActiveAngleTarget] = useState('front'); // 'front', 'back', 'side', 'top'
+  const [activeAngleTarget, setActiveAngleTarget] = useState('front'); // 'front', 'back', 'left', 'right'
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
@@ -222,7 +222,7 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
         material: material,
         era: era,
         dimensions: { width: '32 in', depth: '34 in', height: '32 in' },
-        images: [angles.front, angles.back, angles.side, angles.top],
+        images: [angles.front, angles.back, angles.left, angles.right],
         multiAngleImages: angles,
         has3DModel: true,
         model3D: {
@@ -296,7 +296,7 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
             List Furniture Item with 3D Scanner
           </h2>
           <p className="text-xs text-gray-500 mt-1">
-            Capture or Upload 4 Angles (Front, Back, Side, Top) to Generate interactive 360° 3D Model
+            Capture or Upload 4 Angles (Front, Back, Left Side, Right Side) to Generate interactive 360° 3D Model
           </p>
         </div>
 
@@ -406,7 +406,7 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
 
                 {/* AI Vision Damage Assessor */}
                 <DamageAssessorWidget
-                  currentPhoto={angles.front?.startsWith('data:') ? angles.front : null}
+                  angles={angles}
                   onApplyCondition={(grade) => setConditionGrade(grade)}
                 />
 
@@ -645,8 +645,8 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
                   {[
                     { key: 'front', label: '1. FRONT VIEW', desc: 'Front seat & frame face' },
                     { key: 'back', label: '2. BACK VIEW', desc: 'Rear upholstery & back legs' },
-                    { key: 'side', label: '3. SIDE VIEW', desc: 'Armrest & side profile' },
-                    { key: 'top', label: '4. TOP / DETAIL VIEW', desc: 'Top cushion or table surface' }
+                    { key: 'left', label: '3. LEFT SIDE VIEW', desc: 'Left armrest & side profile' },
+                    { key: 'right', label: '4. RIGHT SIDE VIEW', desc: 'Right armrest & side profile' }
                   ].map((item) => (
                     <div key={item.key} className="bg-white p-3 rounded-2xl border border-[#E5DEC9] space-y-2 relative group">
                       <div className="flex justify-between items-center text-xs font-mono font-bold text-[#A17A16]">
