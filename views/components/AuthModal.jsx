@@ -166,7 +166,7 @@ export const AuthModal = ({ isOpen, onClose, onLoginSuccess, initialRole = 'buye
                   {activeMode === 'signup' ? 'Create Account' : 'Sign In to Decorate3D'}
                 </h2>
                 <p className="text-xs text-gray-500 mt-1">
-                  Database Verified • Nodemailer 2FA Email OTP
+                  {activeMode === 'signup' ? 'Database Verified • Nodemailer 2FA Email OTP' : 'Database Verified • Secure Access Session'}
                 </p>
               </div>
 
@@ -279,7 +279,7 @@ export const AuthModal = ({ isOpen, onClose, onLoginSuccess, initialRole = 'buye
                   type="submit"
                   className="w-full gold-gradient-btn py-3.5 rounded-xl font-bold text-sm shadow-md mt-2 tracking-wider flex items-center justify-center space-x-2"
                 >
-                  <span>{activeMode === 'signup' ? 'PROCEED TO EMAIL 2FA OTP' : 'VERIFY & SEND 2FA OTP'}</span>
+                  <span>{activeMode === 'signup' ? 'PROCEED TO EMAIL 2FA OTP' : 'SECURE SIGN IN'}</span>
                 </button>
               </form>
 
