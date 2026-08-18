@@ -15,6 +15,8 @@ import escrowRoutes from './features/f14-escrow-holding/escrow.routes.js';
 import geoRoutes from './features/f9-geo-map/geo.routes.js';
 import roomPlannerRoutes from './routes/roomPlannerRoutes.js';
 import damageRoutes from './features/f1-damage-assessment/damage.routes.js';
+import dispatchRoutes from './features/f11-courier-dispatch/dispatch.routes.js';
+import trackingRoutes from './features/f12-live-tracking/tracking.routes.js';
 
 dotenv.config();
 
@@ -41,6 +43,8 @@ app.use('/api/escrow', escrowRoutes);
 app.use('/api/geo', geoRoutes);
 app.use('/api/room-planner', roomPlannerRoutes);
 app.use('/api/modules/m1/ai-damage-assessor', damageRoutes);
+app.use('/api/dispatch',  dispatchRoutes);          // F11 — Courier Dispatch Board
+app.use('/api/tracking',  trackingRoutes);          // F12 — Live Delivery Tracking
 
 app.get('/api/health', (req, res) => {
   res.json({

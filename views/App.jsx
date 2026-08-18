@@ -14,6 +14,8 @@ import { CheckoutPage } from './features/f13-checkout/CheckoutPage.jsx';
 import { GeoMapPage } from './features/f9-geo-map/GeoMapPage.jsx';
 import { EscrowVaultPage } from './features/f14-escrow-holding/EscrowVaultPage.jsx';
 import { SellerEscrowPanel } from './features/f14-escrow-holding/SellerEscrowPanel.jsx';
+import { CourierDispatchBoard } from './features/f11-courier-dispatch/CourierDispatchBoard.jsx';
+import { LiveTrackingMap } from './features/f12-live-tracking/LiveTrackingMap.jsx';
 
 import { seedProductsData } from '../models/seedData.js';
 import { Box, ShieldCheck, MapPin, Truck, Grid, Lock, CheckCircle, Trash2 } from 'lucide-react';
@@ -31,6 +33,7 @@ export default function App() {
   const [isSellerListingOpen, setIsSellerListingOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isStripeCheckoutOpen, setIsStripeCheckoutOpen] = useState(false);
+  const [trackingJob, setTrackingJob] = useState(null); // F12 — Live Tracking
   
   // Centered Notification Dialog
   const [notification, setNotification] = useState(null);
@@ -361,23 +364,32 @@ export default function App() {
 
         {/* COURIER / DRIVER DASHBOARD VIEW (/courier) */}
         {activeTab === 'logistics' && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 animate-fadeIn">
-            <div className="bg-[#1E232A] text-white rounded-3xl p-8 border border-[#A17A16]/30 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
-              <div>
-                <span className="gold-badge text-xs px-3 py-1 rounded-full uppercase">COURIER PORTAL (/courier)</span>
-                <h1 className="font-serif text-3xl font-bold mt-2">Logistics & Geo-Radius Bidding Hub</h1>
-                <p className="text-sm text-gray-300 mt-1 max-w-xl">
-                  Connect local courier drivers, calculate distance matrix quotes, and verify delivery with OTP handshake codes.
-                </p>
+          <div className="space-y-0 animate-fadeIn">
+            {/* Existing header banner */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-2">
+              <div className="bg-[#1E232A] text-white rounded-3xl p-8 border border-[#A17A16]/30 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
+                <div>
+                  <span className="gold-badge text-xs px-3 py-1 rounded-full uppercase">COURIER PORTAL (/courier)</span>
+                  <h1 className="font-serif text-3xl font-bold mt-2">Logistics &amp; Geo-Radius Bidding Hub</h1>
+                  <p className="text-sm text-gray-300 mt-1 max-w-xl">
+                    Connect local courier drivers, calculate distance matrix quotes, and verify delivery with OTP handshake codes.
+                  </p>
+                </div>
+                <button
+                  onClick={() => showCenteredNotification('info', 'Courier Bid Placed', 'Submitted $45 delivery bid for local Dhaka zone dispatch.')}
+                  className="gold-gradient-btn px-6 py-3.5 rounded-xl font-bold text-sm shadow-xl flex items-center space-x-2 whitespace-nowrap"
+                >
+                  <Truck className="w-5 h-5" />
+                  <span>BID ON OPEN DELIVERIES</span>
+                </button>
               </div>
-              <button
-                onClick={() => showCenteredNotification('info', 'Courier Bid Placed', 'Submitted $45 delivery bid for local Dhaka zone dispatch.')}
-                className="gold-gradient-btn px-6 py-3.5 rounded-xl font-bold text-sm shadow-xl flex items-center space-x-2 whitespace-nowrap"
-              >
-                <Truck className="w-5 h-5" />
-                <span>BID ON OPEN DELIVERIES</span>
-              </button>
             </div>
+            {/* F11 — Courier Dispatch Board (Injamamul Haque Fahim) */}
+            <CourierDispatchBoard
+              user={user}
+              onNotify={showCenteredNotification}
+              onTrackJob={(job) => setTrackingJob(job)}
+            />
           </div>
         )}
 
@@ -531,6 +543,14 @@ export default function App() {
           );
           open3DInspector(newProd);
         }}
+      />
+
+      {/* F12 — Live Delivery Tracking Modal (Injamamul Haque Fahim) */}
+      <LiveTrackingMap
+        job={trackingJob}
+        isOpen={!!trackingJob}
+        onClose={() => setTrackingJob(null)}
+        viewerRole={user?.role || 'buyer'}
       />
 
       {/* Footer */}
