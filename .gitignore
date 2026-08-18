@@ -1,0 +1,44 @@
+# =============================================================
+#  DECORATE3D — .gitignore
+# =============================================================
+
+# Environment Variables (NEVER commit secrets!)
+.env
+.env.local
+.env.*.local
+
+# Node.js Dependencies
+node_modules/
+
+# Build Output
+dist/
+build/
+
+# Vite cache
+.vite/
+
+# Uploaded user files (runtime data, not source)
+uploads/images/*
+uploads/models/*
+!uploads/images/.gitkeep
+!uploads/models/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+server_test.log
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE / Editor
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Temporary / Debug scripts (keep .env.example and source only)
+check_*.js
+clear_*.js

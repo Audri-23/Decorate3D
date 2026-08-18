@@ -7,7 +7,7 @@ export const connectDB = async () => {
   try {
     const connStr = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/decorate3d';
     await mongoose.connect(connStr, {
-      serverSelectionTimeoutMS: 2000,
+      serverSelectionTimeoutMS: 10000, // Increased for Atlas (remote server needs more time)
     });
     console.log(`[Database] MongoDB Connected to ${mongoose.connection.host}`);
     return true;

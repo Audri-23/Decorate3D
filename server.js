@@ -46,11 +46,14 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'OK',
     project: 'Decorate3D - C2C Marketplace',
-    activeModule: 'Module 1 Feature 2 (Muhtasim Ahmed)',
+    environment: process.env.NODE_ENV || 'development',
     architecture: 'Unified MVC Architecture',
-    databaseConfigured: !!process.env.MONGODB_URI,
+    databaseConfigured: !!(process.env.MONGO_URI || process.env.MONGODB_URI),
     jwtConfigured: !!process.env.JWT_SECRET,
-    emailConfigured: !!process.env.EMAIL_USER
+    emailConfigured: !!process.env.EMAIL_USER,
+    stripeConfigured: !!process.env.STRIPE_SECRET_KEY,
+    geminiConfigured: !!process.env.GEMINI_API_KEY,
+    mapsConfigured: !!process.env.VITE_GOOGLE_MAPS_API_KEY
   });
 });
 
@@ -72,12 +75,17 @@ if (fs.existsSync(distPath)) {
 connectDB().then(async () => {
   await initEmailTransporter();
   const server = app.listen(PORT, '0.0.0.0', () => {
+    const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI || 'local fallback';
+    const isAtlas = mongoUri.includes('mongodb+srv');
     console.log(`=======================================================`);
-    console.log(` 🚀 Decorate3D Production Server running on port ${PORT}`);
-    console.log(` 🌐 Network Host: http://0.0.0.0:${PORT} (Accessible across local network)`);
-    console.log(` ⚙️ Environment loaded:`);
-    console.log(`    - PORT: ${PORT}`);
-    console.log(`    - MONGODB_URI: ${process.env.MONGODB_URI || 'default local'}`);
+    console.log(` 🚀 Decorate3D Server running on port ${PORT}`);
+    console.log(` 🌐 Local:   http://localhost:${PORT}`);
+    console.log(` ⚙️  Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(` 🍃 MongoDB: ${isAtlas ? '✅ Atlas (Cloud)' : '⚠️  Local'}`);
+    console.log(` 📧 Email:   ${process.env.EMAIL_USER ? '✅ ' + process.env.EMAIL_USER : '❌ Not configured'}`);
+    console.log(` 💳 Stripe:  ${process.env.STRIPE_SECRET_KEY ? '✅ Configured' : '❌ Not configured'}`);
+    console.log(` 🤖 Gemini:  ${process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY_HERE' ? '✅ Configured' : '⚠️  Key needed'}`);
+    console.log(` 🗺️  Maps:    ${process.env.VITE_GOOGLE_MAPS_API_KEY && process.env.VITE_GOOGLE_MAPS_API_KEY !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE' ? '✅ Configured' : '⚠️  Key needed'}`);
     console.log(`=======================================================`);
   });
 
