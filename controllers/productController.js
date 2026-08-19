@@ -270,13 +270,17 @@ export const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // 1. Delete from database
     try {
       await ProductModel.findByIdAndDelete(id);
-    } catch {
-      const index = seedProductsData.findIndex(p => p._id === id);
-      if (index !== -1) {
-        seedProductsData.splice(index, 1);
-      }
+    } catch (dbErr) {
+      console.warn('[Delete Product Warning] DB delete failed:', dbErr.message);
+    }
+
+    // 2. ALWAYS remove from in-memory seedProductsData array so it is never re-merged
+    const index = seedProductsData.findIndex(p => p._id === id || (p._id && p._id.toString() === id));
+    if (index !== -1) {
+      seedProductsData.splice(index, 1);
     }
 
     return res.status(200).json({ success: true, message: 'Product deleted successfully' });
