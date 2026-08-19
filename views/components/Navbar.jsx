@@ -143,6 +143,16 @@ export const Navbar = ({ activeTab, setActiveTab, cartCount, openAuthModal, user
                       <p className="text-[10px] text-gray-500 truncate">{user?.email || ""}</p>
                     </div>
 
+                    {user?.role === 'seller' && (
+                      <button
+                        onClick={() => setActiveTab('seller_dashboard')}
+                        className="w-full text-left px-4 py-2 text-xs font-semibold text-amber-700 hover:bg-[#F9F4E9] hover:text-[#A17A16] flex items-center space-x-2 border-b border-gray-100"
+                      >
+                        <Grid className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Seller Dashboard</span>
+                      </button>
+                    )}
+
                     <button
                       onClick={() => setActiveTab('profile')}
                       className="w-full text-left px-4 py-2 text-xs font-medium text-gray-700 hover:bg-[#F9F4E9] hover:text-[#A17A16] flex items-center space-x-2"
