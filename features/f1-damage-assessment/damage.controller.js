@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { getGeminiApiKey } from '../../config/gemini.js';
 
 /**
  * Utility function to convert data URL, HTTP/HTTPS URL, or raw base64 string into buffer & mimeType
@@ -170,8 +171,8 @@ export const assessDamage = async (req, res) => {
       });
     }
 
-    // 3. Obtain GEMINI_API_KEY from environment variables
-    const apiKey = process.env.GEMINI_API_KEY;
+    // 3. Obtain GEMINI_API_KEY from config/gemini helper (rotates multiple keys if present)
+    const apiKey = getGeminiApiKey();
     if (!apiKey) {
       return res.status(500).json({
         success: false,
@@ -211,7 +212,7 @@ Strict Rules:
 `;
 
     // 5. Send request to Google Gemini API (gemini-3.5-flash model)
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
     
     const responseSchema = {
       type: 'OBJECT',

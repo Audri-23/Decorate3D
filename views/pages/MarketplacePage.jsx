@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, Box, Sparkles, SlidersHorizontal } from 'lucide-react';
+import { Search, Filter, Box, Sparkles, SlidersHorizontal, Camera, RefreshCw } from 'lucide-react';
 import { ProductCard } from '../components/ProductCard.jsx';
 
 export const MarketplacePage = ({ products, onSelectProduct, open3DInspector }) => {
@@ -7,20 +7,24 @@ export const MarketplacePage = ({ products, onSelectProduct, open3DInspector }) 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedCondition, setSelectedCondition] = useState('All');
 
+  // Style Search State removed
+
   const categories = ['All', 'Chairs', 'Sofas', 'Tables'];
   const conditions = ['All', 'EXCELLENT', 'GOOD', 'FAIR'];
 
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          p.description.toLowerCase().includes(searchQuery.toLowerCase());
+      p.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCat = selectedCategory === 'All' || p.category.toLowerCase() === selectedCategory.toLowerCase();
     const matchesCond = selectedCondition === 'All' || p.conditionGrade.toUpperCase() === selectedCondition;
     return matchesSearch && matchesCat && matchesCond;
   });
 
+  // handleStyleSearchUpload removed
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fadeIn">
-      
+
       {/* Hero Banner Section */}
       <div className="relative rounded-3xl bg-[#1E232A] text-white p-8 sm:p-12 overflow-hidden shadow-2xl border border-[#A17A16]/30">
         <div className="relative z-10 max-w-2xl space-y-4">
@@ -48,17 +52,19 @@ export const MarketplacePage = ({ products, onSelectProduct, open3DInspector }) 
 
       {/* Filter & Search Bar */}
       <div className="bg-white rounded-2xl p-4 border border-[#E5DEC9] shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        
-        {/* Search Bar */}
-        <div className="relative w-full md:w-96">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search Mid-Century chairs, sofas, tables..."
-            className="w-full pl-10 pr-4 py-2.5 bg-[#FBF9F5] border border-[#E5DEC9] rounded-xl text-sm focus:outline-none focus:border-[#A17A16]"
-          />
+
+        {/* Search Bar with AI Visual Search */}
+        <div className="relative w-full md:w-96 flex items-center">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search Mid-Century chairs, sofas, tables..."
+              className="w-full pl-10 pr-4 py-2.5 bg-[#FBF9F5] border border-[#E5DEC9] rounded-xl text-sm focus:outline-none focus:border-[#A17A16]"
+            />
+          </div>
         </div>
 
         {/* Category Tabs */}
@@ -66,12 +72,13 @@ export const MarketplacePage = ({ products, onSelectProduct, open3DInspector }) 
           {categories.map(cat => (
             <button
               key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
-                selectedCategory === cat
+              onClick={() => {
+                setSelectedCategory(cat);
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${selectedCategory === cat
                   ? 'bg-[#A17A16] text-white shadow-sm'
                   : 'bg-[#F9F4E9] text-gray-700 hover:bg-[#E9D3A4]'
-              }`}
+                }`}
             >
               {cat}
             </button>
@@ -83,7 +90,9 @@ export const MarketplacePage = ({ products, onSelectProduct, open3DInspector }) 
           <span className="text-gray-500 font-semibold hidden sm:inline">Condition:</span>
           <select
             value={selectedCondition}
-            onChange={(e) => setSelectedCondition(e.target.value)}
+            onChange={(e) => {
+              setSelectedCondition(e.target.value);
+            }}
             className="bg-[#FBF9F5] border border-[#E5DEC9] px-3 py-2 rounded-xl font-semibold text-gray-800 focus:outline-none focus:border-[#A17A16]"
           >
             {conditions.map(cond => (
@@ -98,7 +107,6 @@ export const MarketplacePage = ({ products, onSelectProduct, open3DInspector }) 
       <div className="space-y-4">
         <div className="flex justify-between items-center text-xs text-gray-500 font-mono">
           <span>Showing {filteredProducts.length} verified listings with 3D model data</span>
-          <span className="text-[#A17A16] font-bold">Module 1 Feature 2 Active</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

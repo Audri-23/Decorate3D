@@ -17,6 +17,9 @@ import roomPlannerRoutes from './routes/roomPlannerRoutes.js';
 import damageRoutes from './features/f1-damage-assessment/damage.routes.js';
 import dispatchRoutes from './features/f11-courier-dispatch/dispatch.routes.js';
 import trackingRoutes from './features/f12-live-tracking/tracking.routes.js';
+import taggingRoutes from './features/f3-attribute-tagging/tagging.routes.js';
+import styleSearchRoutes from './features/f4-style-search/styleSearch.routes.js';
+import assistantRoutes from './features/f5-ai-assistant/assistant.routes.js';
 
 dotenv.config();
 
@@ -43,6 +46,9 @@ app.use('/api/escrow', escrowRoutes);
 app.use('/api/geo', geoRoutes);
 app.use('/api/room-planner', roomPlannerRoutes);
 app.use('/api/modules/m1/ai-damage-assessor', damageRoutes);
+app.use('/api/modules/m3/attribute-tagging', taggingRoutes); // F3 — Auto Attribute Tagging
+app.use('/api/modules/m3/style-search', styleSearchRoutes); // F4 — Visual Style Search
+app.use('/api/modules/m3/ai-assistant', assistantRoutes); // F5 — AI Shop Assistant & Negotiator
 app.use('/api/dispatch',  dispatchRoutes);          // F11 — Courier Dispatch Board
 app.use('/api/tracking',  trackingRoutes);          // F12 — Live Delivery Tracking
 

@@ -11,9 +11,11 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('Chairs');
-  const [material, setMaterial] = useState('Top-Grain Leather & Solid Wood');
-  const [era, setEra] = useState('Mid-Century Modern');
+  const [material, setMaterial] = useState('');
+  const [color, setColor] = useState('');
+  const [era, setEra] = useState('');
   const [description, setDescription] = useState('');
+  const [isTagging, setIsTagging] = useState(false);
 
   // 3D GLB/GLTF Model File State & Validation
   const [glbFile, setGlbFile] = useState(null);
@@ -93,6 +95,42 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
 
     return () => clearTimeout(delayDebounceFn);
   }, [originalPrice, itemAge, category, conditionGrade]);
+
+  // AI Auto-Tagging Hook
+  const handleAutoTag = async (frontImageSrc) => {
+    if (!frontImageSrc || frontImageSrc.startsWith('https://images.unsplash.com')) {
+      return;
+    }
+    setIsTagging(true);
+    try {
+      const res = await fetch('/api/modules/m3/attribute-tagging', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageBase64: frontImageSrc,
+          angle: 'front'
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        const { category: taggedCategory, material: taggedMaterial, color: taggedColor, era: taggedEra } = data.data;
+        if (taggedCategory) setCategory(taggedCategory);
+        if (taggedMaterial) setMaterial(taggedMaterial);
+        if (taggedColor) setColor(taggedColor);
+        if (taggedEra) setEra(taggedEra);
+      }
+    } catch (err) {
+      console.warn('Failed to auto-tag attributes:', err);
+    } finally {
+      setIsTagging(false);
+    }
+  };
+
+  useEffect(() => {
+    if (angles.front && !angles.front.startsWith('https://images.unsplash.com')) {
+      handleAutoTag(angles.front);
+    }
+  }, [angles.front]);
 
   if (!isOpen) return null;
 
@@ -185,6 +223,29 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
     }
   };
 
+  const resetForm = () => {
+    setTitle('');
+    setPrice('');
+    setCategory('Chairs');
+    setMaterial('Top-Grain Leather & Solid Wood');
+    setColor('');
+    setEra('Mid-Century Modern');
+    setDescription('');
+    setOriginalPrice('');
+    setItemAge('');
+    setConditionGrade('GOOD');
+    setGlbFile(null);
+    setGlbPreviewUrl('');
+    setGlbFileName('');
+    setGlbError(null);
+    setAngles({
+      front: 'https://images.unsplash.com/photo-1580481072645-022f9a6d1276?w=800&auto=format&fit=crop&q=80',
+      back: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&auto=format&fit=crop&q=80',
+      left: 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=800&auto=format&fit=crop&q=80',
+      right: 'https://images.unsplash.com/photo-1580481072645-022f9a6d1276?w=800&auto=format&fit=crop&q=80'
+    });
+  };
+
   const handleSubmitFinal = async () => {
     setIsProcessing3D(true);
     setProcessingProgress(20);
@@ -220,6 +281,7 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
         isRareFind: true,
         description: description || 'Handcrafted furniture item uploaded with interactive GLB/GLTF 3D model.',
         material: material,
+        color: color,
         era: era,
         dimensions: { width: '32 in', depth: '34 in', height: '32 in' },
         images: [angles.front, angles.back, angles.left, angles.right],
@@ -380,7 +442,7 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-[11px] font-mono font-bold text-gray-700 uppercase mb-1">Material Composition</label>
                     <input
@@ -388,6 +450,17 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
                       value={material}
                       onChange={(e) => setMaterial(e.target.value)}
                       placeholder="e.g. Top-Grain Leather & Walnut Wood"
+                      className="w-full px-4 py-2.5 bg-white border border-[#E5DEC9] rounded-xl text-sm focus:outline-none focus:border-[#A17A16]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-mono font-bold text-gray-700 uppercase mb-1">Primary Color</label>
+                    <input
+                      type="text"
+                      value={color}
+                      onChange={(e) => setColor(e.target.value)}
+                      placeholder="e.g. Tan Brown"
                       className="w-full px-4 py-2.5 bg-white border border-[#E5DEC9] rounded-xl text-sm focus:outline-none focus:border-[#A17A16]"
                     />
                   </div>
@@ -403,6 +476,13 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
                     />
                   </div>
                 </div>
+
+                {isTagging && (
+                  <div className="flex items-center space-x-2 text-xs text-[#A17A16] font-mono animate-pulse bg-[#F9F4E9]/50 border border-[#E9D3A4]/60 p-2.5 rounded-xl">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>AI auto-tagging category, material & color...</span>
+                  </div>
+                )}
 
                 {/* AI Vision Damage Assessor */}
                 <DamageAssessorWidget

@@ -1,5 +1,80 @@
+import fs from 'fs';
+import path from 'path';
 import { seedProductsData } from '../models/seedData.js';
 import { ProductModel } from '../models/ProductModel.js';
+import { getEmbedding } from '../features/f4-style-search/styleSearch.controller.js';
+import { getGeminiApiKey } from '../config/gemini.js';
+
+async function fetchImageBuffer(imageInput) {
+  if (imageInput.startsWith('/uploads/') || imageInput.startsWith('uploads/')) {
+    const cleanPath = imageInput.startsWith('/') ? imageInput.slice(1) : imageInput;
+    const absPath = path.join(process.cwd(), cleanPath);
+    if (fs.existsSync(absPath)) {
+      return { buffer: fs.readFileSync(absPath), mimeType: path.extname(cleanPath) === '.png' ? 'image/png' : 'image/jpeg' };
+    }
+  } else if (imageInput.startsWith('http://') || imageInput.startsWith('https://')) {
+    const response = await fetch(imageInput, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+    if (response.ok) {
+      return { buffer: Buffer.from(await response.arrayBuffer()), mimeType: response.headers.get('content-type') || 'image/jpeg' };
+    }
+  } else if (imageInput.startsWith('data:')) {
+    const match = imageInput.match(/^data:([^;]+);base64,(.*)$/);
+    if (match) {
+      return { buffer: Buffer.from(match[2], 'base64'), mimeType: match[1] };
+    }
+  }
+  return { buffer: Buffer.from(imageInput, 'base64'), mimeType: 'image/jpeg' };
+}
+
+async function describeImage(imageBuffer, mimeType, apiKey) {
+  const prompt = `
+Analyze the uploaded image of a furniture item and describe its style features in detail.
+Specify the item type, design style, shape, details, material texturing, and primary colors.
+Be extremely descriptive and detailed (e.g. 'A tan-brown leather lounge armchair with walnut wood outer shell and metal base, mid-century modern style').
+Return ONLY the raw descriptive sentence. Do not include introductory text or formatting.
+`;
+
+  const payload = {
+    contents: [
+      {
+        parts: [
+          { text: prompt },
+          {
+            inline_data: {
+              mime_type: mimeType,
+              data: imageBuffer.toString('base64')
+            }
+          }
+        ]
+      }
+    ],
+    generationConfig: {
+      temperature: 0.2
+    }
+  };
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    throw new Error(`Gemini Image Description failed: ${res.status}`);
+  }
+
+  const data = await res.json();
+  const description = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!description) {
+    throw new Error('Failed to generate image description.');
+  }
+  return description.trim();
+}
 
 export const getProducts = async (req, res) => {
   try {
@@ -115,6 +190,21 @@ export const uploadFiles = async (req, res) => {
 export const createProduct = async (req, res) => {
   try {
     const productData = { ...req.body };
+
+    // Generate embedding vector if an image is provided
+    const apiKey = getGeminiApiKey();
+    if (primaryImage && apiKey && !apiKey.includes('YOUR_GEMINI_API_KEY_HERE')) {
+      try {
+        console.log('[Product Creation] Generating embedding vector for newly listed item...');
+        const { buffer, mimeType } = await fetchImageBuffer(primaryImage);
+        const description = await describeImage(buffer, mimeType, apiKey);
+        const vector = await getEmbedding(description, apiKey);
+        productData.embedding = vector;
+        console.log('✅ New product embedding successfully generated.');
+      } catch (embErr) {
+        console.warn('[Product Creation Warning] Failed to generate embedding during creation:', embErr.message);
+      }
+    }
 
     // Strip custom string _id if it's not a valid 24-char hex ObjectId
     if (productData._id && typeof productData._id === 'string' && !productData._id.match(/^[0-9a-fA-F]{24}$/)) {

@@ -1,9 +1,59 @@
-import React, { useState } from 'react';
-import { Sparkles, ShieldCheck, Box, Eye, Heart, Share2, ShoppingCart, MapPin, Truck, ChevronRight } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Sparkles, ShieldCheck, Box, Eye, Heart, Share2, ShoppingCart, MapPin, Truck, ChevronRight, MessageCircle, X } from 'lucide-react';
 import { ShippingQuoteWidget } from '../features/f10-shipping-quote/ShippingQuoteWidget.jsx';
 
 export const ProductDetailPage = ({ product, open3DInspector, onAddToCart, onLaunchRoomPlanner }) => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+  // AI Assistant Chat States
+  const [chatMessages, setChatMessages] = useState([
+    { role: 'assistant', content: `Hello! I am your AI assistant for this listing. You can ask me anything about the ${product.title}, its materials, condition grade, or negotiate its price! I am also here to guide you to checkout.` }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
+  // Auto-scrolling Ref
+  const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    if (isChatOpen) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages, isTyping, isChatOpen]);
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+
+    const userMessage = { role: 'user', content: chatInput };
+    const updatedMessages = [...chatMessages, userMessage];
+    setChatMessages(updatedMessages);
+    setChatInput('');
+    setIsTyping(true);
+
+    try {
+      const res = await fetch('/api/modules/m3/ai-assistant/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: product._id,
+          messages: updatedMessages
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.reply) {
+        setChatMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
+      } else {
+        setChatMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }]);
+      }
+    } catch (err) {
+      console.error(err);
+      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I cannot connect to the server right now.' }]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
 
   if (!product) return null;
 
@@ -195,6 +245,96 @@ export const ProductDetailPage = ({ product, open3DInspector, onAddToCart, onLau
 
         </div>
       </div>
+
+      {/* Floating Chat Assistant Trigger Button */}
+      <button
+        onClick={() => setIsChatOpen(!isChatOpen)}
+        className="fixed bottom-6 right-6 z-50 bg-[#1E232A] hover:bg-black text-[#E9D3A4] p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 flex items-center justify-center border border-[#E9D3A4]/30 hover:rotate-6 group"
+        title="Chat with AI Shop Assistant"
+      >
+        <MessageCircle className="w-6 h-6 text-[#E9D3A4]" />
+        <span className="max-w-0 overflow-hidden group-hover:max-w-32 group-hover:ml-2 font-mono text-[10px] font-bold tracking-wider transition-all duration-300 uppercase whitespace-nowrap text-white">
+          AI Assistant
+        </span>
+      </button>
+
+      {/* Sliding AI Shop Assistant Drawer */}
+      <div className={`fixed top-0 right-0 h-full w-96 max-w-full bg-white border-l border-[#E5DEC9] z-50 shadow-2xl flex flex-col transition-all duration-300 ease-in-out transform ${
+        isChatOpen ? 'translate-x-0' : 'translate-x-full'
+      }`}>
+        {/* Drawer Header */}
+        <div className="bg-[#1E232A] text-white p-4 flex items-center justify-between border-b border-[#E9D3A4]/30 shadow-md">
+          <div className="flex items-center space-x-2.5">
+            <Sparkles className="w-4 h-4 text-[#E9D3A4] animate-pulse" />
+            <div>
+              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#E9D3A4]">
+                AI Shop Assistant
+              </h3>
+              <span className="text-[10px] text-gray-400 font-mono">Negotiator & Info Desk</span>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsChatOpen(false)}
+            className="text-gray-400 hover:text-white p-1 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Messages Viewport */}
+        <div className="flex-1 p-4 space-y-4 overflow-y-auto bg-[#FBF9F5] text-xs flex flex-col scrollbar-thin">
+          {chatMessages.map((msg, index) => (
+            <div key={index} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+              <span className="text-[9px] font-mono text-gray-400 mb-0.5">{msg.role === 'user' ? 'You' : 'Assistant'}</span>
+              <div className={`p-3.5 rounded-2xl max-w-[85%] leading-relaxed shadow-sm ${
+                msg.role === 'user'
+                  ? 'bg-[#1E232A] text-white rounded-tr-none'
+                  : 'bg-white text-gray-800 rounded-tl-none border border-[#E5DEC9]'
+              }`}>
+                {msg.content}
+              </div>
+            </div>
+          ))}
+          {isTyping && (
+            <div className="flex items-center space-x-1.5 text-gray-400 font-mono text-[10px] pl-1 animate-pulse">
+              <span>AI is formulating a reply</span>
+              <span className="animate-bounce">.</span>
+              <span className="animate-bounce delay-100">.</span>
+              <span className="animate-bounce delay-200">.</span>
+            </div>
+          )}
+          {/* Scroll target */}
+          <div ref={chatEndRef} />
+        </div>
+
+        {/* Footer Chat Input */}
+        <form onSubmit={handleSendMessage} className="p-4 border-t border-[#E5DEC9] bg-white flex gap-2">
+          <input
+            type="text"
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            placeholder="Ask about dimensions or negotiate price..."
+            className="flex-1 bg-[#FBF9F5] border border-[#E5DEC9] px-3.5 py-2.5 rounded-xl text-xs focus:outline-none focus:border-[#A17A16]"
+            disabled={isTyping}
+          />
+          <button
+            type="submit"
+            disabled={isTyping || !chatInput.trim()}
+            className="bg-[#1E232A] hover:bg-black text-[#E9D3A4] px-4 rounded-xl text-xs font-bold font-mono transition-all disabled:opacity-50 flex items-center justify-center"
+          >
+            Send
+          </button>
+        </form>
+      </div>
+
+      {/* Backdrop Overlay when drawer is open */}
+      {isChatOpen && (
+        <div
+          onClick={() => setIsChatOpen(false)}
+          className="fixed inset-0 bg-black/45 backdrop-blur-sm z-45 transition-opacity duration-300 animate-fadeIn"
+        />
+      )}
+
     </div>
   );
 };
