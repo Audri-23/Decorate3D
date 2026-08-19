@@ -1,9 +1,0 @@
-[Database Warning] MongoDB connection skipped/offline. Running in-memory persistence fallback: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
-[Email Service] Production Gmail SMTP initialized for decorate3d2026@gmail.com
-=======================================================
- 🚀 Decorate3D Production Server running on port 5001
- 🌐 Network Host: http://0.0.0.0:5001 (Accessible across local network)
- ⚙️ Environment loaded:
-    - PORT: 5001
-    - MONGODB_URI: mongodb://localhost:27017/decorate3d
-=======================================================

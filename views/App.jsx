@@ -16,6 +16,8 @@ import { EscrowVaultPage } from './features/f14-escrow-holding/EscrowVaultPage.j
 import { SellerEscrowPanel } from './features/f14-escrow-holding/SellerEscrowPanel.jsx';
 import { CourierDispatchBoard } from './features/f11-courier-dispatch/CourierDispatchBoard.jsx';
 import { LiveTrackingMap } from './features/f12-live-tracking/LiveTrackingMap.jsx';
+import { WebXRARModal } from '../features/f7-f8-ar-visualizer/WebXRARModal.jsx';
+import { ARFitValidationModal } from '../features/f7-f8-ar-visualizer/ARFitValidationModal.jsx';
 
 import { seedProductsData } from '../models/seedData.js';
 import { Box, ShieldCheck, MapPin, Truck, Grid, Lock, CheckCircle, Trash2 } from 'lucide-react';
@@ -29,6 +31,8 @@ export default function App() {
   // Modals & Drawers
   const [is3DInspectorOpen, setIs3DInspectorOpen] = useState(false);
   const [isRoomPlannerOpen, setIsRoomPlannerOpen] = useState(false);
+  const [isARModalOpen, setIsARModalOpen] = useState(false);
+  const [isFitModalOpen, setIsFitModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSellerListingOpen, setIsSellerListingOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -135,6 +139,28 @@ export default function App() {
 
   const close3DInspector = () => {
     setIs3DInspectorOpen(false);
+  };
+
+  const openARCamera = (productToView = null) => {
+    if (productToView) {
+      setSelectedProduct(productToView);
+    }
+    setIsARModalOpen(true);
+  };
+
+  const closeARCamera = () => {
+    setIsARModalOpen(false);
+  };
+
+  const openFitValidation = (productToView = null) => {
+    if (productToView) {
+      setSelectedProduct(productToView);
+    }
+    setIsFitModalOpen(true);
+  };
+
+  const closeFitValidation = () => {
+    setIsFitModalOpen(false);
   };
 
   const openRoomPlanner = () => {
@@ -262,6 +288,8 @@ export default function App() {
             open3DInspector={open3DInspector}
             onAddToCart={handleAddToCart}
             onLaunchRoomPlanner={openRoomPlanner}
+            onOpenARCamera={openARCamera}
+            onOpenFitValidation={openFitValidation}
           />
         )}
 
@@ -475,7 +503,32 @@ export default function App() {
         isOpen={is3DInspectorOpen}
         onClose={close3DInspector}
         onAddToCart={handleAddToCart}
-        onLaunchAR={openRoomPlanner}
+        onLaunchAR={() => {
+          close3DInspector();
+          openARCamera(selectedProduct);
+        }}
+      />
+
+      {/* Module 3 Feature 3 (F7) — WebXR AR Camera Overlay Visualizer */}
+      <WebXRARModal
+        product={selectedProduct}
+        isOpen={isARModalOpen}
+        onClose={closeARCamera}
+        onOpenFitValidation={(p) => {
+          closeARCamera();
+          openFitValidation(p);
+        }}
+      />
+
+      {/* Module 3 Feature 4 (F8) — AR Measurement Fit Validation Tool */}
+      <ARFitValidationModal
+        product={selectedProduct}
+        isOpen={isFitModalOpen}
+        onClose={closeFitValidation}
+        onLaunchAROverlay={(p) => {
+          closeFitValidation();
+          openARCamera(p);
+        }}
       />
 
       {/* Room Planner Modal */}

@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, ShieldCheck, Box, Eye, Heart, Share2, ShoppingCart, MapPin, Truck, ChevronRight, MessageCircle, X } from 'lucide-react';
+import { Sparkles, ShieldCheck, Box, Eye, Heart, Share2, ShoppingCart, MapPin, Truck, ChevronRight, MessageCircle, X, Smartphone, Ruler } from 'lucide-react';
 import { ShippingQuoteWidget } from '../features/f10-shipping-quote/ShippingQuoteWidget.jsx';
 
-export const ProductDetailPage = ({ product, open3DInspector, onAddToCart, onLaunchRoomPlanner }) => {
+export const ProductDetailPage = ({ product, open3DInspector, onAddToCart, onLaunchRoomPlanner, onOpenARCamera, onOpenFitValidation }) => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   // AI Assistant Chat States
@@ -88,21 +88,31 @@ export const ProductDetailPage = ({ product, open3DInspector, onAddToCart, onLau
               className="w-full h-full object-cover transition-opacity duration-300"
             />
 
-            {/* Top Left Badge: 3D Model Available */}
+            {/* Top Left Badge: 3D Model & WebXR AR Ready */}
             <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-[#E5DEC9] flex items-center space-x-2 shadow-sm">
-              <Box className="w-4 h-4 text-[#A17A16]" />
-              <span className="text-xs font-bold text-gray-800 tracking-wide">3D Model Available</span>
+              <Smartphone className="w-4 h-4 text-[#A17A16]" />
+              <span className="text-xs font-bold text-gray-800 tracking-wide">WebXR 1:1 AR Ready</span>
             </div>
           </div>
 
-          {/* Dedicated Separate Launch 3D Inspector Button */}
-          <button
-            onClick={() => open3DInspector(product)}
-            className="w-full gold-gradient-btn py-3.5 px-6 rounded-2xl font-mono text-sm font-bold tracking-wider flex items-center justify-center space-x-3 shadow-lg hover:scale-[1.01] transition-all border border-[#E9D3A4]/50"
-          >
-            <Box className="w-5 h-5 text-gray-900 animate-pulse" />
-            <span>LAUNCH INTERACTIVE 3D INSPECTOR</span>
-          </button>
+          {/* Action Buttons below Hero Image */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              onClick={() => open3DInspector(product)}
+              className="gold-gradient-btn py-3.5 px-4 rounded-2xl font-mono text-xs font-bold tracking-wider flex items-center justify-center space-x-2 shadow-lg hover:scale-[1.01] transition-all border border-[#E9D3A4]/50"
+            >
+              <Box className="w-4 h-4 text-gray-900 animate-pulse" />
+              <span>360° 3D INSPECTOR</span>
+            </button>
+
+            <button
+              onClick={() => onOpenARCamera(product)}
+              className="bg-[#1E232A] hover:bg-black text-[#E9D3A4] py-3.5 px-4 rounded-2xl font-mono text-xs font-bold tracking-wider flex items-center justify-center space-x-2 shadow-lg border border-[#E9D3A4]/40 hover:scale-[1.01] transition-all"
+            >
+              <Smartphone className="w-4 h-4 text-[#E9D3A4] animate-bounce" />
+              <span>VIEW IN MY ROOM (AR)</span>
+            </button>
+          </div>
 
           {/* Thumbnail Gallery Row */}
           <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -129,6 +139,16 @@ export const ProductDetailPage = ({ product, open3DInspector, onAddToCart, onLau
             >
               <Box className="w-5 h-5 sm:w-6 sm:h-6 transition-transform group-hover:scale-110" />
               <span className="text-[9px] sm:text-[10px] font-mono font-bold mt-1">3D VIEW</span>
+            </button>
+
+            {/* AR Launch Thumbnail Button */}
+            <button
+              onClick={() => onOpenARCamera(product)}
+              className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-[#E9D3A4] hover:border-[#A17A16] bg-[#F9F4E9] flex flex-col items-center justify-center text-[#A17A16] transition-all group shadow-sm"
+              title="Launch WebXR AR Camera Overlay (F7)"
+            >
+              <Smartphone className="w-5 h-5 sm:w-6 sm:h-6 transition-transform group-hover:scale-110" />
+              <span className="text-[9px] sm:text-[10px] font-mono font-bold mt-1">AR VIEW</span>
             </button>
 
             {/* Room Planner Thumbnail Button */}
@@ -178,21 +198,25 @@ export const ProductDetailPage = ({ product, open3DInspector, onAddToCart, onLau
           {/* Craftsmanship Details Card matching Screenshot 1 */}
           <div className="bg-white rounded-2xl p-6 border border-[#E5DEC9] shadow-sm space-y-4">
             <h3 className="text-xs font-mono font-bold text-[#A17A16] uppercase tracking-wider">
-              CRAFTSMANSHIP DETAILS
+              CRAFTSMANSHIP & PHYSICAL DIMENSIONS
             </h3>
 
             <p className="text-sm text-gray-600 leading-relaxed">
               {product.description}
             </p>
 
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[#E5DEC9]/60 text-xs">
-              <div>
-                <span className="text-gray-400 font-bold uppercase block text-[10px]">MATERIAL</span>
-                <span className="font-semibold text-gray-800">{product.material}</span>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-4 border-t border-[#E5DEC9]/60 text-xs font-mono">
+              <div className="bg-[#F9F4E9] p-2.5 rounded-xl border border-[#E9D3A4]">
+                <span className="text-gray-500 font-bold uppercase block text-[9px]">WIDTH</span>
+                <span className="font-bold text-[#A17A16] text-sm">{product.dimensions?.width || '32 in'}</span>
               </div>
-              <div>
-                <span className="text-gray-400 font-bold uppercase block text-[10px]">ERA</span>
-                <span className="font-semibold text-gray-800">{product.era}</span>
+              <div className="bg-[#F9F4E9] p-2.5 rounded-xl border border-[#E9D3A4]">
+                <span className="text-gray-500 font-bold uppercase block text-[9px]">DEPTH</span>
+                <span className="font-bold text-[#A17A16] text-sm">{product.dimensions?.depth || '35 in'}</span>
+              </div>
+              <div className="bg-[#F9F4E9] p-2.5 rounded-xl border border-[#E9D3A4]">
+                <span className="text-gray-500 font-bold uppercase block text-[9px]">HEIGHT</span>
+                <span className="font-bold text-[#A17A16] text-sm">{product.dimensions?.height || '34 in'}</span>
               </div>
             </div>
           </div>
@@ -224,20 +248,22 @@ export const ProductDetailPage = ({ product, open3DInspector, onAddToCart, onLau
               <span>ADD TO CART (ESCROW SECURED)</span>
             </button>
 
+            {/* F7 - WebXR AR View in My Room Button */}
             <button
-              onClick={() => open3DInspector(product)}
-              className="w-full bg-white hover:bg-gray-50 text-gray-800 font-bold py-3.5 rounded-xl text-sm border border-[#E5DEC9] transition-all flex items-center justify-center space-x-2"
+              onClick={() => onOpenARCamera(product)}
+              className="w-full bg-[#1E232A] hover:bg-black text-[#E9D3A4] font-mono font-bold py-3.5 rounded-xl text-sm border border-[#E9D3A4]/40 transition-all flex items-center justify-center space-x-2 shadow-lg"
             >
-              <Box className="w-4 h-4 text-[#A17A16]" />
-              <span>OPEN 360° 3D INSPECTOR CANVAS</span>
+              <Smartphone className="w-4 h-4 text-[#E9D3A4]" />
+              <span>VIEW IN MY ROOM (WEBXR 1:1 AR)</span>
             </button>
 
+            {/* F8 - AR Measurement Fit Tool Button */}
             <button
-              onClick={() => onLaunchRoomPlanner(product)}
-              className="w-full bg-[#1E232A] hover:bg-[#2A313B] text-white font-mono font-bold py-3.5 rounded-xl text-sm border border-[#E9D3A4]/40 transition-all flex items-center justify-center space-x-2 shadow"
+              onClick={() => onOpenFitValidation(product)}
+              className="w-full bg-white hover:bg-[#F9F4E9] text-gray-900 font-mono font-bold py-3.5 rounded-xl text-sm border border-[#E5DEC9] transition-all flex items-center justify-center space-x-2 shadow-sm"
             >
-              <Sparkles className="w-4 h-4 text-[#E9D3A4]" />
-              <span>ADD REAL 3D ITEM TO ROOM PLANNER</span>
+              <Ruler className="w-4 h-4 text-[#A17A16]" />
+              <span>MEASURE &amp; VALIDATE ROOM FIT (F8)</span>
             </button>
           </div>
 
