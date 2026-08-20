@@ -44,7 +44,7 @@ export const ARFitValidationModal = ({ product, isOpen, onClose, onLaunchAROverl
       <div className="max-w-lg w-full bg-[#1E232A] text-white rounded-3xl border border-[#A17A16]/50 shadow-2xl overflow-hidden space-y-0 my-auto">
 
         {/* Header */}
-        <div className="p-6 bg-[#14181D] border-b border-[#E9D3A4]/20 flex items-center justify-between">
+        <div className="p-6 bg-[#14181D] border-b border-[#2E2107]/20 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-2xl bg-[#A17A16]/20 border border-[#E9D3A4]/40 flex items-center justify-center">
               <Ruler className="w-5 h-5 text-[#E9D3A4]" />

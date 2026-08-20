@@ -2,66 +2,11 @@ import { ProductModel } from '../../models/ProductModel.js';
 import { getGeminiApiKey } from '../../config/gemini.js';
 import { DispatchJobModel, inMemoryDispatchJobs } from '../f11-courier-dispatch/dispatch.model.js';
 
-// Seller Coordinates mapped to Listing ID
-const SELLER_GEO_DATA = {
-  '66b1a1112233445566778899': { lat: 23.8103, lng: 90.4125 },
-  '66b1a22233445566778899aa': { lat: 23.7960, lng: 90.4070 },
-  '66b1a333445566778899aabb': { lat: 23.7461, lng: 90.3742 },
-  '66b1a4445566778899aabbcc': { lat: 23.8759, lng: 90.3795 }
-};
-
-const RATE_PER_KM = 8;
-const MIN_BASE_FEE = 120;
-const SURCHARGE_SMALL = 0;
-const SURCHARGE_MEDIUM = 80;
-const SURCHARGE_LARGE = 180;
-
-function haversineKm(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const toRad = (d) => (d * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function parseDimensionToInches(dimStr) {
-  if (!dimStr) return 12;
-  const num = parseFloat(dimStr);
-  if (isNaN(num)) return 12;
-  const lower = dimStr.toLowerCase();
-  if (lower.includes('cm')) return num / 2.54;
-  return num;
-}
-
-function getVolumeSurcharge(dimensions) {
-  if (!dimensions) return SURCHARGE_MEDIUM;
-  const w = parseDimensionToInches(dimensions.width || dimensions.w || '');
-  const d = parseDimensionToInches(dimensions.depth || dimensions.d || '');
-  const h = parseDimensionToInches(dimensions.height || dimensions.h || '');
-  const volume = w * d * h;
-  if (volume < 10000) return SURCHARGE_SMALL;
-  if (volume < 25000) return SURCHARGE_MEDIUM;
-  return SURCHARGE_LARGE;
-}
-
-function getTransportVehicle(dimensions) {
-  if (!dimensions) return 'Covered Delivery Van';
-  const w = parseDimensionToInches(dimensions.width || dimensions.w || '');
-  const d = parseDimensionToInches(dimensions.depth || dimensions.d || '');
-  const h = parseDimensionToInches(dimensions.height || dimensions.h || '');
-  const volume = w * d * h;
-  if (volume < 10000) return 'Rickshaw Delivery Van or Motorcycle Courier';
-  if (volume < 25000) return 'Mini Pickup Truck (Tata Ace) or Large Rickshaw Van';
-  return 'Covered Cargo Van or 1.5-Ton Pickup Truck';
-}
 
 export const handleAssistantChat = async (req, res) => {
   try {
     const { productId, messages } = req.body;
-    
+
     if (!productId || !messages || !Array.isArray(messages)) {
       return res.status(400).json({ success: false, message: 'Invalid request body.' });
     }
@@ -80,7 +25,7 @@ export const handleAssistantChat = async (req, res) => {
         // Fallback to in-memory seed jobs for demo listings
         dispatchJob = inMemoryDispatchJobs.find(job => job.productId === productId);
       }
-      
+
       if (dispatchJob) {
         if (dispatchJob.status === 'LOCKED') {
           deliveryInfo = `Assigned Courier: ${dispatchJob.lockedByCourierName || 'Courier Partner'}. Status: Locked/En-route.`;
@@ -126,11 +71,11 @@ Rules for conversation:
 
     // 3. Dynamic geocoding check on the latest user message
     const userMsg = messages[messages.length - 1]?.content?.toLowerCase() || '';
-    
+
     // Comprehensive list of Bangladesh cities and major areas
     const bdCities = [
-      'dhaka', 'chittagong', 'chattogram', 'sylhet', 'khulna', 'rajshahi', 'barisal', 'barishal', 'rangpur', 
-      'mymensingh', 'gazipur', 'narayanganj', 'savar', 'tongi', 'comilla', 'coxs bazar', 'cox\'s bazar', 
+      'dhaka', 'chittagong', 'chattogram', 'sylhet', 'khulna', 'rajshahi', 'barisal', 'barishal', 'rangpur',
+      'mymensingh', 'gazipur', 'narayanganj', 'savar', 'tongi', 'comilla', 'coxs bazar', 'cox\'s bazar',
       'jessore', 'bogra', 'dinajpur', 'feni', 'tangail', 'jamalpur', 'pabna', 'kushtia', 'faridpur', 'noakhali',
       'sirajganj', 'kishoreganj', 'madaripur', 'shariatpur', 'munshiganj', 'gopalganj', 'manikganj', 'narsingdi',
       'netrokona', 'sherpur', 'bagerhat', 'chuadanga', 'jhenaidah', 'magura', 'meherpur', 'narail', 'satkhira',
@@ -246,3 +191,59 @@ The user mentioned they live in or are currently in "${locationMatch.name}". You
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// Seller Coordinates mapped to Listing ID
+const SELLER_GEO_DATA = {
+  '66b1a1112233445566778899': { lat: 23.8103, lng: 90.4125 },
+  '66b1a22233445566778899aa': { lat: 23.7960, lng: 90.4070 },
+  '66b1a333445566778899aabb': { lat: 23.7461, lng: 90.3742 },
+  '66b1a4445566778899aabbcc': { lat: 23.8759, lng: 90.3795 }
+};
+
+const RATE_PER_KM = 8;
+const MIN_BASE_FEE = 120;
+const SURCHARGE_SMALL = 0;
+const SURCHARGE_MEDIUM = 80;
+const SURCHARGE_LARGE = 180;
+
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function parseDimensionToInches(dimStr) {
+  if (!dimStr) return 12;
+  const num = parseFloat(dimStr);
+  if (isNaN(num)) return 12;
+  const lower = dimStr.toLowerCase();
+  if (lower.includes('cm')) return num / 2.54;
+  return num;
+}
+
+function getVolumeSurcharge(dimensions) {
+  if (!dimensions) return SURCHARGE_MEDIUM;
+  const w = parseDimensionToInches(dimensions.width || dimensions.w || '');
+  const d = parseDimensionToInches(dimensions.depth || dimensions.d || '');
+  const h = parseDimensionToInches(dimensions.height || dimensions.h || '');
+  const volume = w * d * h;
+  if (volume < 10000) return SURCHARGE_SMALL;
+  if (volume < 25000) return SURCHARGE_MEDIUM;
+  return SURCHARGE_LARGE;
+}
+
+function getTransportVehicle(dimensions) {
+  if (!dimensions) return 'Covered Delivery Van';
+  const w = parseDimensionToInches(dimensions.width || dimensions.w || '');
+  const d = parseDimensionToInches(dimensions.depth || dimensions.d || '');
+  const h = parseDimensionToInches(dimensions.height || dimensions.h || '');
+  const volume = w * d * h;
+  if (volume < 10000) return 'Rickshaw Delivery Van or Motorcycle Courier';
+  if (volume < 25000) return 'Mini Pickup Truck (Tata Ace) or Large Rickshaw Van';
+  return 'Covered Cargo Van or 1.5-Ton Pickup Truck';
+}
