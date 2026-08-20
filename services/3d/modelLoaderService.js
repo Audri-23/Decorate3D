@@ -102,9 +102,28 @@ class ModelLoaderService {
         return reject(new Error('Model URL is required.'));
       }
 
+      const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url.startsWith('/') ? '' : '/'}${url}`;
+
+      if (this.cache.has(fullUrl)) {
+        const cachedGltf = this.cache.get(fullUrl);
+        const clonedScene = cachedGltf.scene.clone(true);
+        const box = new THREE.Box3().setFromObject(clonedScene);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+
+        return resolve({
+          scene: clonedScene,
+          boundingBox: box,
+          size: size,
+          center: center,
+          rawGltf: cachedGltf
+        });
+      }
+
       this.loader.load(
-        url,
+        fullUrl,
         (gltf) => {
+          this.cache.set(fullUrl, gltf);
           const loadedScene = gltf.scene;
           const clonedScene = loadedScene.clone(true);
 
@@ -137,8 +156,8 @@ class ModelLoaderService {
           }
         },
         (error) => {
-          console.error(`[ModelLoaderService Error] Failed to load 3D asset at "${url}":`, error);
-          reject(new Error(`Unable to load 3D model from "${url}". The file may be missing, corrupted, or not valid GLTF.`));
+          console.error(`[ModelLoaderService Error] Failed to load 3D asset at "${fullUrl}":`, error);
+          reject(new Error(`Unable to load 3D model from "${fullUrl}". The file may be missing, corrupted, or not valid GLTF.`));
         }
       );
     });

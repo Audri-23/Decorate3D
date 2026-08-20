@@ -6,7 +6,7 @@
     "unit": "m"
   },
   "wallCustomization": {
-    "paintColor": "#EAE6E1",
+    "paintColor": "#2C3E50",
     "wallMaterial": "plaster"
   },
   "floorCustomization": {
@@ -230,6 +230,6 @@
     }
   ],
   "createdAt": "2026-08-11T22:38:56.991Z",
-  "updatedAt": "2026-08-11T22:39:56.780Z",
+  "updatedAt": "2026-08-19T14:36:35.518Z",
   "__v": 0
 }
