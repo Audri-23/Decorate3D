@@ -190,6 +190,7 @@ export const uploadFiles = async (req, res) => {
 export const createProduct = async (req, res) => {
   try {
     const productData = { ...req.body };
+    const primaryImage = productData.images?.[0] || productData.primaryImage || '';
 
     // Generate embedding vector if an image is provided
     const apiKey = getGeminiApiKey();
