@@ -83,7 +83,10 @@ export default function App() {
         setIsAuthModalOpen(true);
       }
 
-      if (targetRole === 'seller') {
+      if (currentUser && currentUser.role === 'courier') {
+        setActiveTab('logistics');
+        setActiveRoleRoute('courier');
+      } else if (targetRole === 'seller') {
         setActiveTab('seller_dashboard');
       } else if (targetRole === 'courier') {
         setActiveTab('logistics');
@@ -364,33 +367,11 @@ export default function App() {
 
         {/* COURIER / DRIVER DASHBOARD VIEW (/courier) */}
         {activeTab === 'logistics' && (
-          <div className="space-y-0 animate-fadeIn">
-            {/* Existing header banner */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-2">
-              <div className="bg-[#1E232A] text-white rounded-3xl p-8 border border-[#A17A16]/30 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
-                <div>
-                  <span className="gold-badge text-xs px-3 py-1 rounded-full uppercase">COURIER PORTAL (/courier)</span>
-                  <h1 className="font-serif text-3xl font-bold mt-2">Logistics &amp; Geo-Radius Bidding Hub</h1>
-                  <p className="text-sm text-gray-300 mt-1 max-w-xl">
-                    Connect local courier drivers, calculate distance matrix quotes, and verify delivery with OTP handshake codes.
-                  </p>
-                </div>
-                <button
-                  onClick={() => showCenteredNotification('info', 'Courier Bid Placed', 'Submitted $45 delivery bid for local Dhaka zone dispatch.')}
-                  className="gold-gradient-btn px-6 py-3.5 rounded-xl font-bold text-sm shadow-xl flex items-center space-x-2 whitespace-nowrap"
-                >
-                  <Truck className="w-5 h-5" />
-                  <span>BID ON OPEN DELIVERIES</span>
-                </button>
-              </div>
-            </div>
-            {/* F11 — Courier Dispatch Board (Injamamul Haque Fahim) */}
-            <CourierDispatchBoard
-              user={user}
-              onNotify={showCenteredNotification}
-              onTrackJob={(job) => setTrackingJob(job)}
-            />
-          </div>
+          <CourierDispatchBoard
+            user={user}
+            onNotify={showCenteredNotification}
+            onTrackJob={(job) => setTrackingJob(job)}
+          />
         )}
 
         {/* ADMIN DASHBOARD VIEW (/admin) */}
@@ -460,12 +441,12 @@ export default function App() {
 
         {/* Escrow Vault & Holding Tracker — Buyer side */}
         {activeTab === 'escrow_vault' && (
-          <EscrowVaultPage user={user} />
+          <EscrowVaultPage user={user} onTrackJob={(job) => setTrackingJob(job)} />
         )}
 
         {/* Seller Escrow Release Panel — Seller enters buyer OTP to unlock funds */}
         {activeTab === 'seller_escrow' && (
-          <SellerEscrowPanel user={user} />
+          <SellerEscrowPanel user={user} onTrackJob={(job) => setTrackingJob(job)} />
         )}
       </main>
 
@@ -493,6 +474,19 @@ export default function App() {
         onClose={() => setIsAuthModalOpen(false)}
         onLoginSuccess={(authenticatedUser) => {
           setUser(authenticatedUser);
+          if (authenticatedUser.role === 'courier') {
+            setActiveTab('logistics');
+            setActiveRoleRoute('courier');
+            window.history.pushState(null, '', '/courier');
+          } else if (authenticatedUser.role === 'seller') {
+            setActiveTab('seller_dashboard');
+            setActiveRoleRoute('seller');
+            window.history.pushState(null, '', '/seller');
+          } else if (authenticatedUser.role === 'admin') {
+            setActiveTab('admin_dashboard');
+            setActiveRoleRoute('admin');
+            window.history.pushState(null, '', '/admin');
+          }
           showCenteredNotification(
             'success',
             'Authentication Complete',

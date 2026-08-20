@@ -28,8 +28,13 @@ export const getDispatchJobs = async (req, res) => {
 
     if (isDbConnected()) {
       try {
-        jobs = await DispatchJobModel.find().lean();
-        if (!jobs || jobs.length === 0) {
+        const dbJobs = await DispatchJobModel.find().lean();
+        if (dbJobs && dbJobs.length > 0) {
+          // Use DB jobs and supplement any missing in-memory seed jobs
+          const dbJobIds = new Set(dbJobs.map(j => String(j._id)));
+          const missingSeedJobs = inMemoryDispatchJobs.filter(j => !dbJobIds.has(j._id));
+          jobs = [...dbJobs, ...missingSeedJobs];
+        } else {
           jobs = [...inMemoryDispatchJobs];
         }
       } catch {
@@ -41,7 +46,11 @@ export const getDispatchJobs = async (req, res) => {
 
     // ── Filter by status ──
     if (status && status !== 'ALL') {
-      jobs = jobs.filter(j => j.status === status);
+      if (status === 'OPEN') {
+        jobs = jobs.filter(j => j.status === 'OPEN' || j.status === 'BIDDING');
+      } else {
+        jobs = jobs.filter(j => j.status === status);
+      }
     }
 
     // ── Filter by category ──
@@ -280,7 +289,38 @@ export const lockJob = async (req, res) => {
     }
 
     const jobIndex = inMemoryDispatchJobs.findIndex(j => j._id === id);
+
+    // ── Try DB if not found in memory ──
     if (jobIndex === -1) {
+      if (isDbConnected() && id.match(/^[0-9a-fA-F]{24}$/)) {
+        try {
+          const dbJob = await DispatchJobModel.findById(id);
+          if (!dbJob) return res.status(404).json({ success: false, message: 'Dispatch job not found.' });
+
+          if (dbJob.status === 'LOCKED') {
+            return res.status(400).json({
+              success: false,
+              message: `This job is already locked by ${dbJob.lockedByCourierName}.`
+            });
+          }
+          if (dbJob.status === 'COMPLETED') {
+            return res.status(400).json({ success: false, message: 'This job has already been completed.' });
+          }
+
+          dbJob.status = 'LOCKED';
+          dbJob.lockedByCourierId = courierId;
+          dbJob.lockedByCourierName = courierName;
+          await dbJob.save();
+
+          return res.status(200).json({
+            success: true,
+            message: `Job successfully locked by ${courierName}. You are committed to this delivery.`,
+            job: dbJob.toObject()
+          });
+        } catch (dbErr) {
+          return res.status(500).json({ success: false, message: dbErr.message });
+        }
+      }
       return res.status(404).json({ success: false, message: 'Dispatch job not found.' });
     }
 

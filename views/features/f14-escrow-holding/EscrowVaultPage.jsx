@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Lock, Clock, DollarSign, AlertCircle, RefreshCw, Building2, UserCheck } from 'lucide-react';
+import { ShieldCheck, Lock, Clock, DollarSign, AlertCircle, RefreshCw, Building2, UserCheck, Radio } from 'lucide-react';
 
 // This page shows all orders that are currently locked in Escrow.
 // Escrow means: the buyer's money is held safely and will NOT be released
 // to the seller until the buyer confirms physical delivery using an OTP code.
 
-export function EscrowVaultPage({ user }) {
+export function EscrowVaultPage({ user, onTrackJob }) {
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -222,16 +222,37 @@ export function EscrowVaultPage({ user }) {
 
               </div>
 
-              {/* If locked: show the OTP hint row */}
+              {/* If locked: show the OTP hint row & Live Tracking button */}
               {order.escrowStatus === 'LOCKED_IN_ESCROW' && (
-                <div className="px-5 py-3 border-t border-amber-100 bg-amber-50 flex items-center justify-between">
-                  <div className="flex items-center space-x-2 text-xs text-amber-700">
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Escrow release is <strong>blocked</strong>. Waiting for buyer delivery OTP confirmation.</span>
+                <div className="px-5 py-3.5 border-t border-amber-100 bg-amber-50/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2 text-xs text-amber-700 font-medium">
+                      <ShieldCheck className="w-4 h-4 shrink-0" />
+                      <span>Escrow release is <strong>blocked</strong>. Share OTP with courier upon delivery.</span>
+                    </div>
+                    <span className="text-xs font-mono font-bold text-amber-800 bg-amber-100 px-3 py-1 rounded-lg border border-amber-200 shadow-sm">
+                      OTP: {order.otpCode}
+                    </span>
                   </div>
-                  <span className="text-xs font-mono font-bold text-amber-700 bg-amber-100 px-3 py-1 rounded-lg border border-amber-200">
-                    OTP: {order.otpCode}
-                  </span>
+
+                  <button
+                    onClick={() => onTrackJob?.({
+                      _id: order.jobId || 'job_dispatch_004',
+                      productTitle: order.productTitle,
+                      productImage: order.productImage || '',
+                      pickupAddress: 'Dhanmondi Rd 27, Dhaka',
+                      pickupLat: 23.7509,
+                      pickupLng: 90.3754,
+                      dropoffAddress: 'Gulshan 2 Circle, Dhaka',
+                      dropoffLat: 23.7925,
+                      dropoffLng: 90.4078
+                    })}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#1E232A] hover:bg-[#2d3540] text-white text-xs font-bold rounded-xl border border-[#A17A16]/40 hover:border-[#C9980A] transition-all group shadow-sm"
+                  >
+                    <Radio className="w-3.5 h-3.5 text-[#C9980A] group-hover:animate-pulse" />
+                    <span>TRACK LIVE COURIER LOCATION</span>
+                    <span className="ml-1 w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  </button>
                 </div>
               )}
 

@@ -86,23 +86,8 @@ export const inMemoryDispatchJobs = [
     dropoffLng: 90.4066,
     distanceKm: 3.2,
     suggestedFeeBDT: 136,
-    status: 'BIDDING',
-    bids: [
-      {
-        courierId: 'courier_seed_01',
-        courierName: 'Rahman Express Delivery',
-        bidAmountBDT: 150,
-        note: 'Can pick up within 2 hours. Own van, safe transport guaranteed.',
-        placedAt: new Date(Date.now() - 30 * 60 * 1000)
-      },
-      {
-        courierId: 'courier_seed_02',
-        courierName: 'Dhaka Cargo Hub',
-        bidAmountBDT: 140,
-        note: 'Available now. Furniture transport specialist.',
-        placedAt: new Date(Date.now() - 15 * 60 * 1000)
-      }
-    ],
+    status: 'OPEN',
+    bids: [],
     lockedByCourierId: null,
     lockedByCourierName: null,
     sellerName: 'Ashfaq Habib Rafi',

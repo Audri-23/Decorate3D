@@ -1,33 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import L from 'leaflet';
 import {
   X, Truck, MapPin, Clock, Navigation, Package,
   CheckCircle, Loader2, AlertCircle, RefreshCw,
   Radio, RotateCcw, User, ArrowRight, Wifi
 } from 'lucide-react';
-import { startTrackingSession, pollTrackingState, resetTrackingSession } from './trackingApi.js';
-
-// ─── Load Leaflet from CDN (same pattern as F9 GeoMapPage) ───────────────────
-function loadLeaflet() {
-  return new Promise((resolve) => {
-    if (window.L) { resolve(window.L); return; }
-    if (!document.getElementById('leaflet-css')) {
-      const link  = document.createElement('link');
-      link.id     = 'leaflet-css';
-      link.rel    = 'stylesheet';
-      link.href   = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      document.head.appendChild(link);
-    }
-    if (!document.getElementById('leaflet-js')) {
-      const script  = document.createElement('script');
-      script.id     = 'leaflet-js';
-      script.src    = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      script.onload = () => resolve(window.L);
-      document.head.appendChild(script);
-    } else {
-      const t = setInterval(() => { if (window.L) { clearInterval(t); resolve(window.L); } }, 80);
-    }
-  });
-}
+import { startTrackingSession, pollTrackingState, resetTrackingSession, updateCourierGPS } from './trackingApi.js';
 
 // ─── Status config ────────────────────────────────────────────────────────────
 const STATUS_CFG = {
@@ -113,6 +91,7 @@ export function LiveTrackingMap({ job, isOpen, onClose, viewerRole = 'buyer' }) 
   const [pollCount,   setPollCount]   = useState(0);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [mapMode,     setMapMode]     = useState('street'); // 'dark' | 'street'
+  const [gpsLoading,  setGpsLoading]  = useState(false);   // courier GPS push
 
   const TILE_LAYERS = {
     dark:   { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',   attr: '© OpenStreetMap, © CartoDB' },
@@ -164,7 +143,6 @@ export function LiveTrackingMap({ job, isOpen, onClose, viewerRole = 'buyer' }) 
   // ── Initialize Leaflet map ─────────────────────────────────────────────────
   useEffect(() => {
     if (!isOpen || !mapContainerRef.current) return;
-    let destroyed = false;
 
     // Inject pulse keyframe once
     if (!document.getElementById('truck-pulse-style')) {
@@ -179,56 +157,67 @@ export function LiveTrackingMap({ job, isOpen, onClose, viewerRole = 'buyer' }) 
       document.head.appendChild(style);
     }
 
-    loadLeaflet().then(L => {
-      if (destroyed || !mapContainerRef.current) return;
-      leafletRef.current = L;
+    leafletRef.current = L;
 
-      // Destroy previous map instance
+    // Destroy previous map instance if any
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.remove();
+      mapInstanceRef.current = null;
+    }
+
+    const isValidCoord = (c) => typeof c === 'number' && !isNaN(c);
+
+    const pLat = isValidCoord(job?.pickupLat) ? job.pickupLat : (isValidCoord(tracking?.pickupLat) ? tracking.pickupLat : 23.8103);
+    const pLng = isValidCoord(job?.pickupLng) ? job.pickupLng : (isValidCoord(tracking?.pickupLng) ? tracking.pickupLng : 90.4125);
+    const dLat = isValidCoord(job?.dropoffLat) ? job.dropoffLat : (isValidCoord(tracking?.dropoffLat) ? tracking.dropoffLat : 23.7925);
+    const dLng = isValidCoord(job?.dropoffLng) ? job.dropoffLng : (isValidCoord(tracking?.dropoffLng) ? tracking.dropoffLng : 90.4078);
+
+    const center = [(pLat + dLat) / 2, (pLng + dLng) / 2];
+
+    const map = L.map(mapContainerRef.current, {
+      center,
+      zoom: 13,
+      zoomControl: true,
+      attributionControl: true
+    });
+    mapInstanceRef.current = map;
+
+    // Tile layer
+    const { url, attr } = TILE_LAYERS[mapMode];
+    L.tileLayer(url, { attribution: attr, maxZoom: 19 }).addTo(map);
+
+    // Force Leaflet tile recalculation as soon as modal is visible
+    setTimeout(() => {
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
+        mapInstanceRef.current.invalidateSize();
       }
+    }, 100);
 
-      const center = job
-        ? [(job.pickupLat + job.dropoffLat) / 2, (job.pickupLng + job.dropoffLng) / 2]
-        : [23.8, 90.4];
+    // Pickup marker
+    if (isValidCoord(pLat) && isValidCoord(pLng)) {
+      const pickupIcon = makePinIcon(L, '#10b981', '🏠');
+      pickupMarkerRef.current = L.marker([pLat, pLng], { icon: pickupIcon })
+        .bindPopup(`<b>📦 PICKUP</b><br/>${job?.pickupAddress || tracking?.pickupAddress || ''}`)
+        .addTo(map);
 
-      const map = L.map(mapContainerRef.current, {
-        center,
-        zoom: 13,
-        zoomControl: true,
-        attributionControl: true
-      });
-      mapInstanceRef.current = map;
+      // Initial truck at pickup
+      const truckIcon = makeTruckIcon(L, true);
+      truckMarkerRef.current = L.marker([pLat, pLng], { icon: truckIcon, zIndexOffset: 1000 })
+        .bindPopup(`<b>🚚 ${job?.lockedByCourierName || tracking?.courierName || 'Courier'}</b><br/>En route…`)
+        .addTo(map);
+    }
 
-      // Tile layer
-      const { url, attr } = TILE_LAYERS[mapMode];
-      L.tileLayer(url, { attribution: attr, maxZoom: 19 }).addTo(map);
+    // Dropoff marker
+    if (isValidCoord(dLat) && isValidCoord(dLng)) {
+      const dropIcon = makePinIcon(L, '#ef4444', '🎯');
+      dropMarkerRef.current = L.marker([dLat, dLng], { icon: dropIcon })
+        .bindPopup(`<b>🎯 DROP-OFF</b><br/>${job?.dropoffAddress || tracking?.dropoffAddress || ''}`)
+        .addTo(map);
+    }
 
-      // Pickup marker
-      if (job) {
-        const pickupIcon = makePinIcon(L, '#10b981', '🏠');
-        pickupMarkerRef.current = L.marker([job.pickupLat, job.pickupLng], { icon: pickupIcon })
-          .bindPopup(`<b>📦 PICKUP</b><br/>${job.pickupAddress || ''}`)
-          .addTo(map);
-
-        const dropIcon = makePinIcon(L, '#ef4444', '🎯');
-        dropMarkerRef.current = L.marker([job.dropoffLat, job.dropoffLng], { icon: dropIcon })
-          .bindPopup(`<b>🎯 DROP-OFF</b><br/>${job.dropoffAddress || ''}`)
-          .addTo(map);
-
-        // Initial truck at pickup
-        const truckIcon = makeTruckIcon(L, true);
-        truckMarkerRef.current = L.marker([job.pickupLat, job.pickupLng], { icon: truckIcon, zIndexOffset: 1000 })
-          .bindPopup(`<b>🚚 ${job.lockedByCourierName || 'Courier'}</b><br/>En route…`)
-          .addTo(map);
-      }
-
-      setMapReady(true);
-    }).catch(() => setLoadError('Failed to load map library.'));
+    setMapReady(true);
 
     return () => {
-      destroyed = true;
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
@@ -244,20 +233,36 @@ export function LiveTrackingMap({ job, isOpen, onClose, viewerRole = 'buyer' }) 
     if (!L || !map || !tracking?.courier || !mapReady) return;
 
     const { lat, lng, status } = tracking.courier;
+    const isValidCoord = (c) => typeof c === 'number' && !isNaN(c);
 
-    // Move truck marker
-    if (truckMarkerRef.current) {
-      truckMarkerRef.current.setLatLng([lat, lng]);
-      const truckIcon = makeTruckIcon(L, status === 'in_transit');
-      truckMarkerRef.current.setIcon(truckIcon);
-      truckMarkerRef.current.setPopupContent(
-        `<b>🚚 ${tracking.courierName}</b><br/>` +
-        (status === 'arrived'
-          ? 'Delivered!'
-          : status === 'preparing'
-          ? 'Preparing pickup…'
-          : `${tracking.courier.remainingKm} km · ${tracking.courier.etaMinutes} min`)
-      );
+    // Update pickup/dropoff markers if needed
+    if (isValidCoord(tracking.pickupLat) && isValidCoord(tracking.pickupLng) && pickupMarkerRef.current) {
+      pickupMarkerRef.current.setLatLng([tracking.pickupLat, tracking.pickupLng]);
+    }
+    if (isValidCoord(tracking.dropoffLat) && isValidCoord(tracking.dropoffLng) && dropMarkerRef.current) {
+      dropMarkerRef.current.setLatLng([tracking.dropoffLat, tracking.dropoffLng]);
+    }
+
+    // Move or create truck marker
+    if (isValidCoord(lat) && isValidCoord(lng)) {
+      if (truckMarkerRef.current) {
+        truckMarkerRef.current.setLatLng([lat, lng]);
+        const truckIcon = makeTruckIcon(L, status === 'in_transit');
+        truckMarkerRef.current.setIcon(truckIcon);
+        truckMarkerRef.current.setPopupContent(
+          `<b>🚚 ${tracking.courierName}</b><br/>` +
+          (status === 'arrived'
+            ? 'Delivered!'
+            : status === 'preparing'
+            ? 'Preparing pickup…'
+            : `${tracking.courier.remainingKm} km · ${tracking.courier.etaMinutes} min`)
+        );
+      } else {
+        const truckIcon = makeTruckIcon(L, status === 'in_transit');
+        truckMarkerRef.current = L.marker([lat, lng], { icon: truckIcon, zIndexOffset: 1000 })
+          .bindPopup(`<b>🚚 ${tracking.courierName}</b><br/>En route…`)
+          .addTo(map);
+      }
     }
 
     // Draw / update route polyline
@@ -274,7 +279,7 @@ export function LiveTrackingMap({ job, isOpen, onClose, viewerRole = 'buyer' }) 
       }).addTo(map);
 
       // Fit bounds on first route draw
-      if (pollCount <= 1) {
+      if (pollCount <= 1 && isValidCoord(tracking.pickupLat) && isValidCoord(tracking.dropoffLat) && isValidCoord(lat)) {
         const bounds = L.latLngBounds([
           [tracking.pickupLat,  tracking.pickupLng],
           [tracking.dropoffLat, tracking.dropoffLng],
@@ -301,6 +306,24 @@ export function LiveTrackingMap({ job, isOpen, onClose, viewerRole = 'buyer' }) 
     if (!job?._id) return;
     await resetTrackingSession(job._id);
     initTracking();
+  };
+
+  // ── Courier: push real device GPS to server ────────────────────────────────
+  const handleShareGPS = async () => {
+    if (!job?._id || !navigator.geolocation) return;
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const user = JSON.parse(localStorage.getItem('decorate3d_user') || '{}');
+        try {
+          await updateCourierGPS(job._id, { lat: latitude, lng: longitude, courierId: user.id });
+        } catch {}
+        setGpsLoading(false);
+      },
+      () => setGpsLoading(false),
+      { enableHighAccuracy: true, timeout: 6000 }
+    );
   };
 
   if (!isOpen) return null;
@@ -574,12 +597,23 @@ export function LiveTrackingMap({ job, isOpen, onClose, viewerRole = 'buyer' }) 
               ))}
             </div>
 
-            {/* Poll counter (debug info) */}
-            <div className="mt-auto p-3 border-t border-white/5">
-              <p className="text-[10px] font-mono text-gray-600 text-center">
-                Polling every 3s · {pollCount} update{pollCount !== 1 ? 's' : ''} received
-              </p>
-            </div>
+            {/* Courier GPS push button — only visible when logged in as courier */}
+            {viewerRole === 'courier' && (
+              <div className="px-4 pb-3">
+                <button
+                  onClick={handleShareGPS}
+                  disabled={gpsLoading}
+                  title="Push your real device GPS location to update the live map"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#C9980A]/10 hover:bg-[#C9980A]/20 border border-[#C9980A]/40 hover:border-[#C9980A] text-[#C9980A] text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                >
+                  {gpsLoading
+                    ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Locating…</>
+                    : <><Navigation className="w-3.5 h-3.5" />SHARE MY GPS LOCATION</>}
+                </button>
+                <p className="text-[10px] text-gray-600 font-mono text-center mt-1.5">Pushes your real device GPS to the live map</p>
+              </div>
+            )}
+
           </div>
         </div>
       </div>

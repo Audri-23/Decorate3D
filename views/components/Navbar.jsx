@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingBag, User, Search, ShieldCheck, MapPin, Grid, LogIn, LogOut, Edit3, ChevronDown, Box } from 'lucide-react';
+import { ShoppingBag, User, Search, ShieldCheck, MapPin, Grid, LogIn, LogOut, Edit3, ChevronDown, Box, Truck } from 'lucide-react';
 
 export const Navbar = ({ activeTab, setActiveTab, cartCount, openAuthModal, user, onLogout, openCart, openSellerListingModal }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -10,7 +10,7 @@ export const Navbar = ({ activeTab, setActiveTab, cartCount, openAuthModal, user
         <div className="flex items-center justify-between h-20">
           
           {/* Logo Section */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('marketplace')}>
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab(user?.role === 'courier' ? 'logistics' : user?.role === 'seller' ? 'seller_dashboard' : 'marketplace')}>
             <div className="w-10 h-10 rounded-full bg-[#1E232A] flex items-center justify-center border-2 border-[#A17A16] shadow-sm">
               <span className="font-serif text-lg font-bold text-[#A17A16]">3D</span>
             </div>
@@ -21,39 +21,58 @@ export const Navbar = ({ activeTab, setActiveTab, cartCount, openAuthModal, user
 
           {/* Main Navigation Links */}
           <nav className="hidden md:flex items-center space-x-6">
-            <button
-              onClick={() => setActiveTab('marketplace')}
-              className={`text-sm font-medium transition-colors ${
-                activeTab === 'marketplace'
-                  ? 'text-[#1E232A] font-bold border-b-2 border-[#A17A16] pb-1'
-                  : 'text-gray-600 hover:text-[#A17A16]'
-              }`}
-            >
-              <span>Marketplace</span>
-            </button>
+            {/* Courier specific nav button */}
+            {user && user.role === 'courier' && (
+              <button
+                onClick={() => setActiveTab('logistics')}
+                className={`text-sm font-bold transition-colors flex items-center space-x-1.5 px-3 py-1 rounded-full border ${
+                  activeTab === 'logistics'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                    : 'text-gray-600 hover:text-emerald-700 border-transparent'
+                }`}
+              >
+                <Truck className="w-4 h-4 text-emerald-600" />
+                <span>Courier Dispatch Hub</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => setActiveTab('room_planner')}
-              className={`text-sm font-medium transition-colors ${
-                activeTab === 'room_planner'
-                  ? 'text-[#1E232A] font-bold border-b-2 border-[#A17A16] pb-1'
-                  : 'text-gray-600 hover:text-[#A17A16]'
-              }`}
-            >
-              <span>3D Room Planner</span>
-            </button>
+            {(!user || user.role !== 'courier') && (
+              <>
+                <button
+                  onClick={() => setActiveTab('marketplace')}
+                  className={`text-sm font-medium transition-colors ${
+                    activeTab === 'marketplace'
+                      ? 'text-[#1E232A] font-bold border-b-2 border-[#A17A16] pb-1'
+                      : 'text-gray-600 hover:text-[#A17A16]'
+                  }`}
+                >
+                  <span>Marketplace</span>
+                </button>
 
-            {/*Geo Map Finder*/}
-            <button
-              onClick={() => setActiveTab('geo_map')}
-              className={`text-sm font-medium transition-colors ${
-                activeTab === 'geo_map'
-                  ? 'text-[#1E232A] font-bold border-b-2 border-[#A17A16] pb-1'
-                  : 'text-gray-600 hover:text-[#A17A16]'
-              }`}
-            >
-              <span>Map Search</span>
-            </button>
+                <button
+                  onClick={() => setActiveTab('room_planner')}
+                  className={`text-sm font-medium transition-colors ${
+                    activeTab === 'room_planner'
+                      ? 'text-[#1E232A] font-bold border-b-2 border-[#A17A16] pb-1'
+                      : 'text-gray-600 hover:text-[#A17A16]'
+                  }`}
+                >
+                  <span>3D Room Planner</span>
+                </button>
+
+                {/*Geo Map Finder*/}
+                <button
+                  onClick={() => setActiveTab('geo_map')}
+                  className={`text-sm font-medium transition-colors ${
+                    activeTab === 'geo_map'
+                      ? 'text-[#1E232A] font-bold border-b-2 border-[#A17A16] pb-1'
+                      : 'text-gray-600 hover:text-[#A17A16]'
+                  }`}
+                >
+                  <span>Map Search</span>
+                </button>
+              </>
+            )}
 
             {/* Escrow Vault — only show when user is logged in as buyer */}
             {user && user.role === 'buyer' && (
@@ -142,6 +161,16 @@ export const Navbar = ({ activeTab, setActiveTab, cartCount, openAuthModal, user
                       <p className="text-xs font-bold text-gray-900 truncate">{user?.name || "User"}</p>
                       <p className="text-[10px] text-gray-500 truncate">{user?.email || ""}</p>
                     </div>
+
+                    {user?.role === 'courier' && (
+                      <button
+                        onClick={() => setActiveTab('logistics')}
+                        className="w-full text-left px-4 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 flex items-center space-x-2 border-b border-gray-100"
+                      >
+                        <Truck className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Courier Dispatch Hub</span>
+                      </button>
+                    )}
 
                     {user?.role === 'seller' && (
                       <button

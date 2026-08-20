@@ -1,12 +1,14 @@
 import mongoose from 'mongoose';
 import { F13OrderModel } from '../f13-stripe-checkout/order.model.js';
 
-// Demo orders used when MongoDB is offline so the page still works
+// Demo orders used when MongoDB is offline or has no orders for demo accounts
 const demoOrders = [
   {
     _id: 'demo_ord_001',
     buyerEmail: 'buyer@decorate3d.com',
-    productTitle: 'Mid-Century Modern Tan Leather Lounge Chair',
+    sellerEmail: 'seller@decorate3d.com',
+    jobId: 'job_dispatch_004',
+    productTitle: 'Organic Live-Edge Walnut & Black Steel Coffee Table',
     amount: 450,
     platformCommissionFee: 45,
     sellerEarnings: 405,
@@ -19,7 +21,9 @@ const demoOrders = [
   {
     _id: 'demo_ord_002',
     buyerEmail: 'buyer@decorate3d.com',
-    productTitle: 'Minimalist Scandinavian Bouclé Accent Chair',
+    sellerEmail: 'seller@decorate3d.com',
+    jobId: 'job_dispatch_001',
+    productTitle: 'Mid-Century Modern Tan Leather Lounge Chair',
     amount: 320,
     platformCommissionFee: 32,
     sellerEarnings: 288,
@@ -47,7 +51,16 @@ export async function getEscrowOrders(req, res) {
       if (sellerEmail) filter.sellerEmail = sellerEmail;
       if (escrowStatus) filter.escrowStatus = escrowStatus;
 
-      const orders = await F13OrderModel.find(filter).sort({ createdAt: -1 });
+      let orders = await F13OrderModel.find(filter).sort({ createdAt: -1 });
+
+      if (!orders || orders.length === 0) {
+        let filtered = demoOrders;
+        if (buyerEmail)   filtered = filtered.filter(o => o.buyerEmail === buyerEmail);
+        if (sellerEmail)  filtered = filtered.filter(o => o.sellerEmail === sellerEmail);
+        if (escrowStatus) filtered = filtered.filter(o => o.escrowStatus === escrowStatus);
+        orders = filtered;
+      }
+
       return res.status(200).json({ success: true, orders });
     } else {
       // MongoDB offline — filter demo orders manually

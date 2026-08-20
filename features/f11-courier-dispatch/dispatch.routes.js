@@ -10,12 +10,12 @@ import {
 
 const router = express.Router();
 
-// F11 — Courier Dispatch Board Routes
-router.get('/',           getDispatchJobs);       // GET  /api/dispatch
-router.post('/',          createDispatchJob);      // POST /api/dispatch
-router.get('/:id',        getDispatchJobById);     // GET  /api/dispatch/:id
-router.post('/:id/bid',   placeBid);              // POST /api/dispatch/:id/bid
-router.post('/:id/lock',  lockJob);               // POST /api/dispatch/:id/lock
+// F11 — Courier Dispatch Board Routes (no server-side auth — role enforced on frontend)
+router.get('/',               getDispatchJobs);    // GET  /api/dispatch
+router.get('/:id',            getDispatchJobById); // GET  /api/dispatch/:id
+router.post('/',              createDispatchJob);  // POST /api/dispatch
+router.post('/:id/bid',       placeBid);           // POST /api/dispatch/:id/bid
+router.post('/:id/lock',      lockJob);            // POST /api/dispatch/:id/lock
 router.patch('/:id/complete', completeJob);        // PATCH /api/dispatch/:id/complete
 
 export default router;
