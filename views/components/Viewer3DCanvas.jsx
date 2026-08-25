@@ -3,6 +3,119 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
+export function buildProceduralFurnitureModel(category = 'Chairs', geometryType = 'lounge_chair', colorHex = '#A17A16') {
+  const group = new THREE.Group();
+  const cat = (category || '').toLowerCase();
+  const geo = (geometryType || '').toLowerCase();
+
+  const isSofa = cat.includes('sofa') || cat.includes('couch') || cat.includes('divan') || geo.includes('sofa');
+  const isTable = cat.includes('table') || cat.includes('desk') || cat.includes('dining') || geo.includes('table');
+
+  const woodMat = new THREE.MeshStandardMaterial({
+    color: 0x5c4033,
+    roughness: 0.5,
+    metalness: 0.1
+  });
+
+  const mainMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(colorHex || 0xA17A16),
+    roughness: 0.4,
+    metalness: 0.1
+  });
+
+  const cushionMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(colorHex || 0x8C5A2B),
+    roughness: 0.6,
+    metalness: 0.05
+  });
+
+  if (isSofa) {
+    // === SOFA / DIVAN MODEL ===
+    const baseGeo = new THREE.BoxGeometry(2.2, 0.25, 0.9);
+    const baseMesh = new THREE.Mesh(baseGeo, woodMat);
+    baseMesh.position.y = 0.25;
+    baseMesh.castShadow = true; baseMesh.receiveShadow = true;
+    group.add(baseMesh);
+
+    const legGeo = new THREE.CylinderGeometry(0.04, 0.025, 0.25, 12);
+    [[-1.0, 0.125, -0.38], [1.0, 0.125, -0.38], [-1.0, 0.125, 0.38], [1.0, 0.125, 0.38]].forEach(([x, y, z]) => {
+      const leg = new THREE.Mesh(legGeo, woodMat);
+      leg.position.set(x, y, z);
+      leg.castShadow = true;
+      group.add(leg);
+    });
+
+    const seatGeo = new THREE.BoxGeometry(0.68, 0.22, 0.82);
+    [-0.7, 0, 0.7].forEach(x => {
+      const seat = new THREE.Mesh(seatGeo, cushionMat);
+      seat.position.set(x, 0.48, 0.02);
+      seat.castShadow = true; seat.receiveShadow = true;
+      group.add(seat);
+    });
+
+    const backGeo = new THREE.BoxGeometry(2.18, 0.65, 0.22);
+    const backMesh = new THREE.Mesh(backGeo, mainMat);
+    backMesh.position.set(0, 0.82, -0.32);
+    backMesh.castShadow = true; backMesh.receiveShadow = true;
+    group.add(backMesh);
+
+    const armGeo = new THREE.BoxGeometry(0.22, 0.55, 0.88);
+    [-1.05, 1.05].forEach(x => {
+      const arm = new THREE.Mesh(armGeo, mainMat);
+      arm.position.set(x, 0.62, 0);
+      arm.castShadow = true; arm.receiveShadow = true;
+      group.add(arm);
+    });
+  } else if (isTable) {
+    // === TABLE / DESK MODEL ===
+    const topGeo = new THREE.BoxGeometry(1.6, 0.08, 0.9);
+    const topMesh = new THREE.Mesh(topGeo, mainMat);
+    topMesh.position.y = 0.76;
+    topMesh.castShadow = true; topMesh.receiveShadow = true;
+    group.add(topMesh);
+
+    const legGeo = new THREE.CylinderGeometry(0.045, 0.03, 0.72, 16);
+    [[-0.7, 0.36, -0.38], [0.7, 0.36, -0.38], [-0.7, 0.36, 0.38], [0.7, 0.36, 0.38]].forEach(([x, y, z]) => {
+      const leg = new THREE.Mesh(legGeo, woodMat);
+      leg.position.set(x, y, z);
+      leg.castShadow = true;
+      group.add(leg);
+    });
+  } else {
+    // === LOUNGE CHAIR MODEL ===
+    const legGeo = new THREE.CylinderGeometry(0.035, 0.02, 0.38, 12);
+    [[-0.32, 0.19, -0.32], [0.32, 0.19, -0.32], [-0.32, 0.19, 0.32], [0.32, 0.19, 0.32]].forEach(([x, y, z]) => {
+      const leg = new THREE.Mesh(legGeo, woodMat);
+      leg.position.set(x, y, z);
+      leg.castShadow = true;
+      group.add(leg);
+    });
+
+    const seatGeo = new THREE.BoxGeometry(0.78, 0.18, 0.76);
+    const seat = new THREE.Mesh(seatGeo, cushionMat);
+    seat.position.set(0, 0.47, 0);
+    seat.castShadow = true; seat.receiveShadow = true;
+    group.add(seat);
+
+    const backGeo = new THREE.BoxGeometry(0.76, 0.62, 0.16);
+    const backMesh = new THREE.Mesh(backGeo, mainMat);
+    backMesh.position.set(0, 0.82, -0.30);
+    backMesh.rotation.x = -0.1;
+    backMesh.castShadow = true; backMesh.receiveShadow = true;
+    group.add(backMesh);
+
+    const armGeo = new THREE.BoxGeometry(0.12, 0.35, 0.72);
+    [-0.39, 0.39].forEach(x => {
+      const arm = new THREE.Mesh(armGeo, woodMat);
+      arm.position.set(x, 0.60, 0);
+      arm.castShadow = true; arm.receiveShadow = true;
+      group.add(arm);
+    });
+  }
+
+  return group;
+}
+
 export const Viewer3DCanvas = ({
   modelUrl = null,
   product = null,
@@ -116,105 +229,23 @@ export const Viewer3DCanvas = ({
     grid.position.y = 0;
     scene.add(grid);
 
-    // 6. Load GLB/GLTF Model File
-    const loader = new GLTFLoader();
+    // 6. Build 3D Furniture Model
     const modelGroup = new THREE.Group();
     modelGroupRef.current = modelGroup;
     scene.add(modelGroup);
 
     loadedMaterialsRef.current = [];
 
-    loader.load(
-      targetUrl,
-      (gltf) => {
-        const loadedModel = gltf.scene;
+    // Render clean procedural 3D model matching product category and geometry type
+    const categoryName = product?.category || 'Chairs';
+    const geometryType = product?.model3D?.geometryType || 'lounge_chair';
+    const proceduralModel = buildProceduralFurnitureModel(categoryName, geometryType, '#A17A16');
 
-        // Auto-center and normalize bounding box
-        const box = new THREE.Box3().setFromObject(loadedModel);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
+    modelGroup.add(proceduralModel);
 
-        // Center model origin
-        loadedModel.position.x -= center.x;
-        loadedModel.position.y -= box.min.y; // Sit model cleanly on ground plane
-        loadedModel.position.z -= center.z;
-
-        // Scale model to fit 1.8m standard studio bounding box if needed
-        const maxDim = Math.max(size.x, size.y, size.z);
-        if (maxDim > 0) {
-          const targetScale = 1.8 / maxDim;
-          loadedModel.scale.setScalar(targetScale);
-        }
-
-        // Traversal for shadow casting and material collection
-        loadedModel.traverse((child) => {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-
-            if (child.material) {
-              const mats = Array.isArray(child.material) ? child.material : [child.material];
-              mats.forEach((m) => {
-                if (!loadedMaterialsRef.current.includes(m)) {
-                  loadedMaterialsRef.current.push(m);
-                }
-              });
-            }
-          }
-        });
-
-        modelGroup.add(loadedModel);
-
-        setIsLoading(false);
-        setLoadingProgress(100);
-        if (onLoadSuccess) onLoadSuccess();
-      },
-      (xhr) => {
-        if (xhr.lengthComputable) {
-          const percent = Math.round((xhr.loaded / xhr.total) * 100);
-          setLoadingProgress(percent);
-          if (onLoading) onLoading(percent);
-        }
-      },
-      (err) => {
-        console.warn('[3D Viewer Notice] Primary model URL failed, loading category fallback model:', targetUrl, err);
-        const cat = (product?.category || '').toLowerCase();
-        let fallbackUrl = '/models/sample_chair.gltf';
-        if (cat.includes('sofa') || cat.includes('couch')) fallbackUrl = '/models/sample_sofa.gltf';
-        else if (cat.includes('table') || cat.includes('desk')) fallbackUrl = '/models/sample_table.gltf';
-
-        loader.load(
-          fallbackUrl,
-          (gltf) => {
-            const loadedModel = gltf.scene;
-            const box = new THREE.Box3().setFromObject(loadedModel);
-            const center = box.getCenter(new THREE.Vector3());
-            const size = box.getSize(new THREE.Vector3());
-
-            loadedModel.position.x -= center.x;
-            loadedModel.position.y -= box.min.y;
-            loadedModel.position.z -= center.z;
-
-            const maxDim = Math.max(size.x, size.y, size.z);
-            if (maxDim > 0) {
-              const targetScale = 1.8 / maxDim;
-              loadedModel.scale.setScalar(targetScale);
-            }
-
-            modelGroup.add(loadedModel);
-            setIsLoading(false);
-            setLoadingProgress(100);
-            if (onLoadSuccess) onLoadSuccess();
-          },
-          null,
-          (fErr) => {
-            setIsLoading(false);
-            setLoadError('Failed to load 3D model.');
-            if (onLoadError) onLoadError(fErr.message || 'Model load error');
-          }
-        );
-      }
-    );
+    setIsLoading(false);
+    setLoadingProgress(100);
+    if (onLoadSuccess) onLoadSuccess();
 
     // 7. Render Animation Loop
     let animationFrameId;

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { buildProceduralFurnitureModel } from '../../views/components/Viewer3DCanvas.jsx';
 
 /**
  * Shared 3D Asset Loading, Normalization & Validation Service
@@ -181,17 +182,18 @@ class ModelLoaderService {
    * Load, auto-orient front-faced, and normalize a GLB/GLTF model to realistic room dimensions
    */
   async loadAndNormalizeGLTFModel(url, category = '', roomDimensions = { width: 5, length: 6, height: 3 }, onProgress = null) {
-    let loaded;
+    let rawScene;
     try {
-      loaded = await this.loadGLTFModel(url, onProgress);
+      const loaded = await this.loadGLTFModel(url, onProgress);
+      rawScene = loaded.scene;
     } catch (err) {
-      console.warn(`[ModelLoaderService Notice] Could not load model at "${url}". Using category fallback model.`, err.message);
-      const fallbackUrl = this.getFallbackModelUrlForCategory(category);
-      loaded = await this.loadGLTFModel(fallbackUrl, onProgress);
+      // Create clean procedural PBR 3D model matching category
+      const colorHex = category.toLowerCase().includes('sofa') ? '#526B5C' : '#A17A16';
+      rawScene = buildProceduralFurnitureModel(category, category, colorHex);
     }
 
-    const rawScene = loaded.scene;
-    let rawSize = loaded.size;
+    const box = new THREE.Box3().setFromObject(rawScene);
+    let rawSize = box.getSize(new THREE.Vector3());
 
     const catLower = (category || '').toLowerCase();
     const isWallMounted = catLower.includes('art') || catLower.includes('frame') || catLower.includes('mirror') || catLower.includes('opening');
