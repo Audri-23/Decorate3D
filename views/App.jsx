@@ -54,59 +54,82 @@ export default function App() {
     setNotification({ type, title, message });
   };
 
-  // URL Path Synchronization & Role Route Parser (/buyer, /seller, /courier, /admin)
+  // URL Path & Tab Route Mapper
+  const TAB_URL_MAP = {
+    marketplace: '/',
+    room_planner: '/room-planner',
+    geo_map: '/map-search',
+    seller_dashboard: '/seller',
+    logistics: '/courier',
+    admin_dashboard: '/admin',
+    escrow_vault: '/escrow-vault',
+    seller_escrow: '/seller-escrow',
+    profile: '/profile'
+  };
+
+  const getTabFromPath = (pathStr) => {
+    const p = (pathStr || '/').toLowerCase();
+    if (p.includes('/seller-escrow')) return 'seller_escrow';
+    if (p.includes('/seller')) return 'seller_dashboard';
+    if (p.includes('/courier')) return 'logistics';
+    if (p.includes('/admin')) return 'admin_dashboard';
+    if (p.includes('/room-planner')) return 'room_planner';
+    if (p.includes('/map-search') || p.includes('/geo')) return 'geo_map';
+    if (p.includes('/escrow-vault')) return 'escrow_vault';
+    if (p.includes('/profile')) return 'profile';
+    if (p.includes('/product/')) return 'product_detail';
+    return 'marketplace';
+  };
+
+  const changeTab = (newTab, productToSet = null, pushToHistory = true) => {
+    setActiveTab(newTab);
+    if (productToSet) {
+      setSelectedProduct(productToSet);
+    }
+
+    if (pushToHistory) {
+      let targetUrl = TAB_URL_MAP[newTab] || '/';
+      if (newTab === 'product_detail' && (productToSet?._id || selectedProduct?._id)) {
+        const idToUse = productToSet?._id || selectedProduct?._id;
+        targetUrl = `/product/${idToUse}`;
+      }
+      if (window.location.pathname !== targetUrl) {
+        window.history.pushState({ tab: newTab, productId: productToSet?._id }, '', targetUrl);
+      }
+    }
+  };
+
+  // URL Path Synchronization & Browser History (Back/Forward Popstate Listener)
   useEffect(() => {
     const syncRouteFromPath = () => {
-      const path = window.location.pathname.toLowerCase();
-      let targetRole = 'buyer';
+      const path = window.location.pathname;
+      const targetTab = getTabFromPath(path);
 
-      if (path.includes('/seller')) {
-        targetRole = 'seller';
-      } else if (path.includes('/courier')) {
-        targetRole = 'courier';
-      } else if (path.includes('/admin')) {
-        targetRole = 'admin';
-      } else {
-        targetRole = 'buyer';
+      if (path.includes('/product/')) {
+        const prodId = path.split('/product/')[1];
+        if (prodId && products && products.length > 0) {
+          const found = products.find(p => String(p._id) === String(prodId));
+          if (found) setSelectedProduct(found);
+        }
       }
 
-      // Check stored user session vs target URL role
-      const savedUserStr = localStorage.getItem('decorate3d_user');
-      const currentUser = savedUserStr ? JSON.parse(savedUserStr) : null;
-
-      if (currentUser && currentUser.role !== targetRole) {
-        setUser(null);
-        localStorage.removeItem('decorate3d_user');
-        setNotification({
-          type: 'info',
-          title: 'Role Route Switched via URL',
-          message: `Switched web address to /${targetRole}. Active ${currentUser.role.toUpperCase()} session has been logged out.`
-        });
-        setIsAuthModalOpen(true);
-      } else if (!currentUser && targetRole !== 'buyer') {
-        setIsAuthModalOpen(true);
-      }
-
-      if (currentUser && currentUser.role === 'courier') {
-        setActiveTab('logistics');
+      if (targetTab === 'seller_dashboard') {
+        setActiveRoleRoute('seller');
+      } else if (targetTab === 'logistics') {
         setActiveRoleRoute('courier');
-      } else if (targetRole === 'seller') {
-        setActiveTab('seller_dashboard');
-      } else if (targetRole === 'courier') {
-        setActiveTab('logistics');
-      } else if (targetRole === 'admin') {
-        setActiveTab('admin_dashboard');
-      } else {
-        setActiveTab(prev => (prev === 'seller_dashboard' || prev === 'admin_dashboard' || prev === 'logistics' ? 'marketplace' : prev));
+      } else if (targetTab === 'admin_dashboard') {
+        setActiveRoleRoute('admin');
+      } else if (targetTab === 'marketplace') {
+        setActiveRoleRoute('buyer');
       }
 
-      setActiveRoleRoute(targetRole);
+      setActiveTab(targetTab);
     };
 
     syncRouteFromPath();
     window.addEventListener('popstate', syncRouteFromPath);
     return () => window.removeEventListener('popstate', syncRouteFromPath);
-  }, []);
+  }, [products]);
 
   // Persist user session
   useEffect(() => {
@@ -263,7 +286,7 @@ export default function App() {
       {/* Navbar */}
       <Navbar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={(tab) => changeTab(tab)}
         cartCount={cart.length}
         openAuthModal={() => setIsAuthModalOpen(true)}
         user={user}
@@ -278,8 +301,7 @@ export default function App() {
           <MarketplacePage
             products={products}
             onSelectProduct={(p) => {
-              setSelectedProduct(p);
-              setActiveTab('product_detail');
+              changeTab('product_detail', p);
             }}
             open3DInspector={open3DInspector}
           />
@@ -586,9 +608,8 @@ export default function App() {
           showCenteredNotification(
             'success',
             '3D Model Generated & Item Published',
-            `"${newProd.title}" multi-angle photos converted to 3D spatial mesh texture map!`
+            `"${newProd.title}" ($${newProd.price}) has been successfully listed in your seller 3D inventory!`
           );
-          open3DInspector(newProd);
         }}
       />
 

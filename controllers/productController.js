@@ -190,22 +190,6 @@ export const uploadFiles = async (req, res) => {
 export const createProduct = async (req, res) => {
   try {
     const productData = { ...req.body };
-    const primaryImage = productData.images?.[0] || productData.primaryImage || '';
-
-    // Generate embedding vector if an image is provided
-    const apiKey = getGeminiApiKey();
-    if (primaryImage && apiKey && !apiKey.includes('YOUR_GEMINI_API_KEY_HERE')) {
-      try {
-        console.log('[Product Creation] Generating embedding vector for newly listed item...');
-        const { buffer, mimeType } = await fetchImageBuffer(primaryImage);
-        const description = await describeImage(buffer, mimeType, apiKey);
-        const vector = await getEmbedding(description, apiKey);
-        productData.embedding = vector;
-        console.log('✅ New product embedding successfully generated.');
-      } catch (embErr) {
-        console.warn('[Product Creation Warning] Failed to generate embedding during creation:', embErr.message);
-      }
-    }
 
     // Strip custom string _id if it's not a valid 24-char hex ObjectId
     if (productData._id && typeof productData._id === 'string' && !productData._id.match(/^[0-9a-fA-F]{24}$/)) {
@@ -234,7 +218,26 @@ export const createProduct = async (req, res) => {
       seedProductsData.unshift(newProduct);
     }
 
-    return res.status(201).json({ success: true, data: newProduct });
+    // Return response immediately to client so listing creation finishes in milliseconds
+    res.status(201).json({ success: true, data: newProduct });
+
+    // Generate embedding vector asynchronously in background (non-blocking)
+    const primaryImage = productData.images?.[0] || productData.primaryImage || '';
+    const apiKey = getGeminiApiKey();
+    if (primaryImage && apiKey && !apiKey.includes('YOUR_GEMINI_API_KEY_HERE')) {
+      (async () => {
+        try {
+          const { buffer, mimeType } = await fetchImageBuffer(primaryImage);
+          const description = await describeImage(buffer, mimeType, apiKey);
+          const vector = await getEmbedding(description, apiKey);
+          if (newProduct._id && ProductModel.findByIdAndUpdate) {
+            await ProductModel.findByIdAndUpdate(newProduct._id, { embedding: vector });
+          }
+        } catch (embErr) {
+          console.warn('[Product Creation Warning] Non-blocking embedding generation skipped:', embErr.message);
+        }
+      })();
+    }
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
