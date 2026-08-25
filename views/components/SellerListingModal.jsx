@@ -467,7 +467,18 @@ function compressImageDataUrl(dataUrl, maxWidth = 800, quality = 0.7) {
               </button>
             </div>
           </div>
+        ) : isProcessing3D ? (
+          /* Processing Spinner Overlay */
+          <div className="py-12 text-center space-y-4">
+            <div className="w-16 h-16 border-4 border-[#E5DEC9] border-t-[#A17A16] rounded-full animate-spin mx-auto" />
+            <h3 className="font-serif text-xl font-bold text-gray-900">Synthesizing Volumetric 3D Model...</h3>
+            <div className="max-w-xs mx-auto bg-gray-200 h-2 rounded-full overflow-hidden">
+              <div className="bg-[#A17A16] h-full transition-all duration-300" style={{ width: `${processingProgress}%` }} />
+            </div>
+            <p className="text-xs font-mono text-gray-500">Mapping Multi-Angle Surface Textures to 3D Furniture Mesh</p>
+          </div>
         ) : (
+          /* Form Content */
           <>
             {/* Modal Header */}
             <div className="text-center mb-6">
@@ -482,22 +493,6 @@ function compressImageDataUrl(dataUrl, maxWidth = 800, quality = 0.7) {
               </p>
             </div>
 
-            {/* Processing Spinner Overlay */}
-            {isProcessing3D && (
-              <div className="py-12 text-center space-y-4">
-                <div className="w-16 h-16 border-4 border-[#E5DEC9] border-t-[#A17A16] rounded-full animate-spin mx-auto" />
-                <h3 className="font-serif text-xl font-bold text-gray-900">Synthesizing Volumetric 3D Model...</h3>
-                <div className="max-w-xs mx-auto bg-gray-200 h-2 rounded-full overflow-hidden">
-                  <div className="bg-[#A17A16] h-full transition-all duration-300" style={{ width: `${processingProgress}%` }} />
-                </div>
-                <p className="text-xs font-mono text-gray-500">Mapping Multi-Angle Surface Textures to 3D Furniture Mesh</p>
-              </div>
-            )}
-          </>
-        )}
-
-        {!isProcessing3D && !createdSuccessProduct && (
-          <>
             {/* Step Navigation Bar */}
             <div className="flex bg-[#E5DEC9]/50 p-1 rounded-2xl mb-6 border border-[#E5DEC9]">
               <button
