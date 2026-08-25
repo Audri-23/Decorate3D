@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { getGeminiApiKey } from '../../config/gemini.js';
 
 /**
@@ -100,14 +101,19 @@ export const assessDamage = async (req, res) => {
       for (const field of fields) {
         if (req.files[field] && req.files[field][0]) {
           const file = req.files[field][0];
-          const buffer = fs.readFileSync(file.path);
-          // If the field is 'image' (fallback), map it to 'front'
-          const key = field === 'image' ? 'front' : field;
-          imagesToProcess[key] = {
-            buffer,
-            mimeType: file.mimetype,
-            imageUrl: `/uploads/images/${file.filename}`
-          };
+          try {
+            const buffer = file.buffer || (file.path && fs.existsSync(file.path) ? fs.readFileSync(file.path) : null);
+            if (buffer) {
+              const key = field === 'image' ? 'front' : field;
+              imagesToProcess[key] = {
+                buffer,
+                mimeType: file.mimetype,
+                imageUrl: file.filename ? `/uploads/images/${file.filename}` : ''
+              };
+            }
+          } catch (fErr) {
+            console.warn(`Failed reading uploaded multipart file ${field}:`, fErr.message);
+          }
         }
       }
     }
@@ -123,22 +129,24 @@ export const assessDamage = async (req, res) => {
               const { buffer, mimeType } = await getImageBufferAndMime(imgData);
               let imageUrl = imgData;
 
-              // Save base64 or URL locally to have a relative static path for visualization/storage
-              if (imgData.startsWith('data:') || imgData.startsWith('http')) {
+              // Save base64 or URL locally if writable, gracefully fallback on read-only serverless
+              try {
                 const ext = mimeType.split('/')[1] || 'jpg';
                 const filename = `img-${Date.now()}-${field}-${Math.round(Math.random() * 1e9)}.${ext}`;
-                const imagesDir = path.join(process.cwd(), 'uploads', 'images');
+                const imagesDir = path.join(os.tmpdir(), 'uploads', 'images');
                 if (!fs.existsSync(imagesDir)) {
                   fs.mkdirSync(imagesDir, { recursive: true });
                 }
                 const savePath = path.join(imagesDir, filename);
                 fs.writeFileSync(savePath, buffer);
                 imageUrl = `/uploads/images/${filename}`;
+              } catch (fsErr) {
+                // Keep original imgData on Vercel read-only filesystem
               }
 
               imagesToProcess[field] = { buffer, mimeType, imageUrl };
             } catch (err) {
-              console.error(`Failed to process angle ${field}:`, err);
+              console.error(`Failed to process angle ${field}:`, err.message);
             }
           }
         }
@@ -147,19 +155,22 @@ export const assessDamage = async (req, res) => {
         const angleKey = req.body.angle || 'front';
         try {
           const { buffer, mimeType } = await getImageBufferAndMime(req.body.imageBase64);
-          const ext = mimeType.split('/')[1] || 'jpg';
-          const filename = `img-${Date.now()}-${angleKey}-${Math.round(Math.random() * 1e9)}.${ext}`;
-          const imagesDir = path.join(process.cwd(), 'uploads', 'images');
-          if (!fs.existsSync(imagesDir)) {
-            fs.mkdirSync(imagesDir, { recursive: true });
-          }
-          const savePath = path.join(imagesDir, filename);
-          fs.writeFileSync(savePath, buffer);
-          const imageUrl = `/uploads/images/${filename}`;
+          let imageUrl = req.body.imageBase64;
+          try {
+            const ext = mimeType.split('/')[1] || 'jpg';
+            const filename = `img-${Date.now()}-${angleKey}-${Math.round(Math.random() * 1e9)}.${ext}`;
+            const imagesDir = path.join(os.tmpdir(), 'uploads', 'images');
+            if (!fs.existsSync(imagesDir)) {
+              fs.mkdirSync(imagesDir, { recursive: true });
+            }
+            const savePath = path.join(imagesDir, filename);
+            fs.writeFileSync(savePath, buffer);
+            imageUrl = `/uploads/images/${filename}`;
+          } catch (fsErr) {}
 
           imagesToProcess[angleKey] = { buffer, mimeType, imageUrl };
         } catch (err) {
-          console.error('Failed to process fallback imageBase64:', err);
+          console.error('Failed to process fallback imageBase64:', err.message);
         }
       }
     }

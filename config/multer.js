@@ -1,26 +1,36 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 
-// Ensure upload directories exist
-const imagesDir = path.join(process.cwd(), 'uploads', 'images');
-const modelsDir = path.join(process.cwd(), 'uploads', 'models');
+// Use /tmp directory on serverless platforms (Vercel) to avoid read-only filesystem errors
+const getBaseUploadDir = () => {
+  if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+    return path.join(os.tmpdir(), 'uploads');
+  }
+  return path.join(process.cwd(), 'uploads');
+};
 
-if (!fs.existsSync(imagesDir)) {
-  fs.mkdirSync(imagesDir, { recursive: true });
-}
-if (!fs.existsSync(modelsDir)) {
-  fs.mkdirSync(modelsDir, { recursive: true });
-}
+const getImagesDir = () => {
+  const dir = path.join(getBaseUploadDir(), 'images');
+  try { if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true }); } catch (e) {}
+  return dir;
+};
+
+const getModelsDir = () => {
+  const dir = path.join(getBaseUploadDir(), 'models');
+  try { if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true }); } catch (e) {}
+  return dir;
+};
 
 // Multer Disk Storage Configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     if (ext === '.glb' || ext === '.gltf') {
-      cb(null, modelsDir);
+      cb(null, getModelsDir());
     } else {
-      cb(null, imagesDir);
+      cb(null, getImagesDir());
     }
   },
   filename: (req, file, cb) => {
