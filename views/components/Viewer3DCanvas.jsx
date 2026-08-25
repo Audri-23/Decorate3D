@@ -239,7 +239,7 @@ export const Viewer3DCanvas = ({
 
     // Determine actual target model URL
     let actualUrl = modelUrl || product?.model3D?.url;
-    if (!actualUrl || actualUrl.includes('/uploads/models/sample_chair')) {
+    if (!actualUrl) {
       const cat = (product?.category || '').toLowerCase();
       if (cat.includes('sofa') || cat.includes('couch')) actualUrl = '/models/sample_sofa.gltf';
       else if (cat.includes('table') || cat.includes('desk')) actualUrl = '/models/sample_table.gltf';

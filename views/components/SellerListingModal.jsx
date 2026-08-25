@@ -209,7 +209,11 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user, onNavi
     setGlbFile(file);
     setGlbFileName(file.name);
     
-    // Read GLB binary file as Base64 Data URL for persistent storage & Three.js GLTFLoader parsing
+    // 1. Create instant Blob Object URL for 0ms live preview in modal canvas
+    const instantBlobUrl = URL.createObjectURL(file);
+    setGlbPreviewUrl(instantBlobUrl);
+
+    // 2. Read GLB binary file as Base64 Data URL for persistent storage across page reloads
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) {
@@ -822,7 +826,8 @@ function compressImageDataUrl(dataUrl, maxWidth = 800, quality = 0.7) {
 
                     <div className="h-56 w-full rounded-2xl overflow-hidden border border-[#E5DEC9] bg-[#FBF9F5] relative shadow-inner">
                       <Viewer3DCanvas
-                        modelUrl={glbPreviewUrl || '/uploads/models/sample_chair.gltf'}
+                        modelUrl={glbPreviewUrl || null}
+                        product={{ category }}
                         isAutoRotating={true}
                         zoomFactor={4.2}
                       />
