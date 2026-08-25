@@ -283,7 +283,15 @@ function compressImageDataUrl(dataUrl, maxWidth = 800, quality = 0.7) {
     setIsProcessing3D(true);
     setProcessingProgress(20);
 
-    let uploadedGlbUrl = '/uploads/models/sample_chair.gltf';
+    let defaultModelUrl = '/models/sample_chair.gltf';
+    const catLower = (category || '').toLowerCase();
+    if (catLower.includes('sofa') || catLower.includes('couch')) {
+      defaultModelUrl = '/models/sample_sofa.gltf';
+    } else if (catLower.includes('table') || catLower.includes('desk')) {
+      defaultModelUrl = '/models/sample_table.gltf';
+    }
+
+    let uploadedGlbUrl = defaultModelUrl;
 
     try {
       const compressedFront = await compressImageDataUrl(angles.front);
@@ -301,9 +309,6 @@ function compressImageDataUrl(dataUrl, maxWidth = 800, quality = 0.7) {
       if (glbFile) {
         setProcessingProgress(40);
 
-        // Vercel Serverless Functions have a strict 4.5 MB request payload limit.
-        // If GLB file is < 3.5 MB, send to upload endpoint.
-        // If GLB file is > 3.5 MB (e.g. 11.4 MB), use object preview URL / sample model so Vercel never rejects the request.
         if (glbFile.size < 3.5 * 1024 * 1024) {
           const formData = new FormData();
           formData.append('files', glbFile);
@@ -323,8 +328,8 @@ function compressImageDataUrl(dataUrl, maxWidth = 800, quality = 0.7) {
             console.warn('GLB file upload network notice:', upErr);
           }
         } else {
-          console.info(`GLB file size (${(glbFile.size / 1024 / 1024).toFixed(1)}MB) exceeds Vercel serverless request limit (4.5MB). Using preview model URL.`);
-          uploadedGlbUrl = glbPreviewUrl || '/uploads/models/sample_chair.gltf';
+          console.info(`GLB file size (${(glbFile.size / 1024 / 1024).toFixed(1)}MB) exceeds Vercel serverless request limit (4.5MB). Using category static model URL.`);
+          uploadedGlbUrl = defaultModelUrl;
         }
       }
 

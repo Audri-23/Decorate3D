@@ -164,10 +164,32 @@ class ModelLoaderService {
   }
 
   /**
+   * Resolve static fallback 3D model URL based on item category
+   */
+  getFallbackModelUrlForCategory(category = '') {
+    const c = (category || '').toLowerCase();
+    if (c.includes('sofa') || c.includes('couch') || c.includes('seating')) {
+      return '/models/sample_sofa.gltf';
+    }
+    if (c.includes('table') || c.includes('desk') || c.includes('dining')) {
+      return '/models/sample_table.gltf';
+    }
+    return '/models/sample_chair.gltf';
+  }
+
+  /**
    * Load, auto-orient front-faced, and normalize a GLB/GLTF model to realistic room dimensions
    */
   async loadAndNormalizeGLTFModel(url, category = '', roomDimensions = { width: 5, length: 6, height: 3 }, onProgress = null) {
-    const loaded = await this.loadGLTFModel(url, onProgress);
+    let loaded;
+    try {
+      loaded = await this.loadGLTFModel(url, onProgress);
+    } catch (err) {
+      console.warn(`[ModelLoaderService Notice] Could not load model at "${url}". Using category fallback model.`, err.message);
+      const fallbackUrl = this.getFallbackModelUrlForCategory(category);
+      loaded = await this.loadGLTFModel(fallbackUrl, onProgress);
+    }
+
     const rawScene = loaded.scene;
     let rawSize = loaded.size;
 

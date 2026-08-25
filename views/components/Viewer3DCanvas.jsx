@@ -177,10 +177,42 @@ export const Viewer3DCanvas = ({
         }
       },
       (err) => {
-        console.error('[3D Viewer Error] Failed to load GLB model:', targetUrl, err);
-        setIsLoading(false);
-        setLoadError('Failed to load 3D model. Please verify the GLB/GLTF file format.');
-        if (onLoadError) onLoadError(err.message || 'Model load error');
+        console.warn('[3D Viewer Notice] Primary model URL failed, loading category fallback model:', targetUrl, err);
+        const cat = (product?.category || '').toLowerCase();
+        let fallbackUrl = '/models/sample_chair.gltf';
+        if (cat.includes('sofa') || cat.includes('couch')) fallbackUrl = '/models/sample_sofa.gltf';
+        else if (cat.includes('table') || cat.includes('desk')) fallbackUrl = '/models/sample_table.gltf';
+
+        loader.load(
+          fallbackUrl,
+          (gltf) => {
+            const loadedModel = gltf.scene;
+            const box = new THREE.Box3().setFromObject(loadedModel);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+
+            loadedModel.position.x -= center.x;
+            loadedModel.position.y -= box.min.y;
+            loadedModel.position.z -= center.z;
+
+            const maxDim = Math.max(size.x, size.y, size.z);
+            if (maxDim > 0) {
+              const targetScale = 1.8 / maxDim;
+              loadedModel.scale.setScalar(targetScale);
+            }
+
+            modelGroup.add(loadedModel);
+            setIsLoading(false);
+            setLoadingProgress(100);
+            if (onLoadSuccess) onLoadSuccess();
+          },
+          null,
+          (fErr) => {
+            setIsLoading(false);
+            setLoadError('Failed to load 3D model.');
+            if (onLoadError) onLoadError(fErr.message || 'Model load error');
+          }
+        );
       }
     );
 
