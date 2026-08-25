@@ -140,16 +140,36 @@ export default function App() {
     }
   }, [user]);
 
-  // Fetch real backend products
+  // Fetch real backend products & sync persistent local custom products
   const fetchProducts = () => {
     fetch('/api/products')
       .then(res => res.json())
       .then(data => {
-        if (data.success && data.data && data.data.length > 0) {
-          setProducts(data.data);
+        let apiProds = (data.success && data.data && data.data.length > 0) ? data.data : seedProductsData;
+        const savedCustomProds = localStorage.getItem('decorate3d_custom_products');
+        if (savedCustomProds) {
+          try {
+            const customList = JSON.parse(savedCustomProds);
+            if (Array.isArray(customList) && customList.length > 0) {
+              const existingIds = new Set(apiProds.map(p => String(p._id)));
+              const uniqueCustom = customList.filter(cp => !existingIds.has(String(cp._id)));
+              apiProds = [...uniqueCustom, ...apiProds];
+            }
+          } catch (e) {}
         }
+        setProducts(apiProds);
       })
-      .catch(() => {});
+      .catch(() => {
+        const savedCustomProds = localStorage.getItem('decorate3d_custom_products');
+        if (savedCustomProds) {
+          try {
+            const customList = JSON.parse(savedCustomProds);
+            if (Array.isArray(customList) && customList.length > 0) {
+              setProducts([...customList, ...seedProductsData]);
+            }
+          } catch (e) {}
+        }
+      });
   };
 
   useEffect(() => {
@@ -603,9 +623,14 @@ export default function App() {
         onClose={() => setIsSellerListingOpen(false)}
         onNavigateToMarketplace={() => changeTab('marketplace')}
         onAddProduct={(newProd) => {
+          try {
+            const existingCustom = localStorage.getItem('decorate3d_custom_products');
+            let list = existingCustom ? JSON.parse(existingCustom) : [];
+            list = [newProd, ...list.filter(p => String(p._id) !== String(newProd._id))];
+            localStorage.setItem('decorate3d_custom_products', JSON.stringify(list));
+          } catch (e) {}
           setProducts(prev => [newProd, ...prev]);
           setSelectedProduct(newProd);
-          fetchProducts();
         }}
       />
 

@@ -229,23 +229,85 @@ export const Viewer3DCanvas = ({
     grid.position.y = 0;
     scene.add(grid);
 
-    // 6. Build 3D Furniture Model
+    // 6. Load REAL 3D GLB/GLTF Model File
+    const loader = new GLTFLoader();
     const modelGroup = new THREE.Group();
     modelGroupRef.current = modelGroup;
     scene.add(modelGroup);
 
     loadedMaterialsRef.current = [];
 
-    // Render clean procedural 3D model matching product category and geometry type
-    const categoryName = product?.category || 'Chairs';
-    const geometryType = product?.model3D?.geometryType || 'lounge_chair';
-    const proceduralModel = buildProceduralFurnitureModel(categoryName, geometryType, '#A17A16');
+    // Determine actual target model URL
+    let actualUrl = modelUrl || product?.model3D?.url;
+    if (!actualUrl || actualUrl.includes('/uploads/models/sample_chair')) {
+      const cat = (product?.category || '').toLowerCase();
+      if (cat.includes('sofa') || cat.includes('couch')) actualUrl = '/models/sample_sofa.gltf';
+      else if (cat.includes('table') || cat.includes('desk')) actualUrl = '/models/sample_table.gltf';
+      else actualUrl = '/models/sample_chair.gltf';
+    }
 
-    modelGroup.add(proceduralModel);
+    loader.load(
+      actualUrl,
+      (gltf) => {
+        const loadedModel = gltf.scene;
 
-    setIsLoading(false);
-    setLoadingProgress(100);
-    if (onLoadSuccess) onLoadSuccess();
+        // Auto-center and normalize bounding box
+        const box = new THREE.Box3().setFromObject(loadedModel);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+
+        // Center model origin
+        loadedModel.position.x -= center.x;
+        loadedModel.position.y -= box.min.y; // Sit model cleanly on ground plane
+        loadedModel.position.z -= center.z;
+
+        // Scale model to fit 1.8m standard studio bounding box if needed
+        const maxDim = Math.max(size.x, size.y, size.z);
+        if (maxDim > 0) {
+          const targetScale = 1.8 / maxDim;
+          loadedModel.scale.setScalar(targetScale);
+        }
+
+        // Traversal for shadow casting and material collection
+        loadedModel.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+
+            if (child.material) {
+              const mats = Array.isArray(child.material) ? child.material : [child.material];
+              mats.forEach((m) => {
+                if (!loadedMaterialsRef.current.includes(m)) {
+                  loadedMaterialsRef.current.push(m);
+                }
+              });
+            }
+          }
+        });
+
+        modelGroup.add(loadedModel);
+        setIsLoading(false);
+        setLoadingProgress(100);
+        if (onLoadSuccess) onLoadSuccess();
+      },
+      (xhr) => {
+        if (xhr.lengthComputable) {
+          const percent = Math.round((xhr.loaded / xhr.total) * 100);
+          setLoadingProgress(percent);
+          if (onLoading) onLoading(percent);
+        }
+      },
+      (err) => {
+        console.warn('[3D Viewer Notice] Could not parse GLB URL directly:', actualUrl, err);
+        const categoryName = product?.category || 'Chairs';
+        const geometryType = product?.model3D?.geometryType || 'lounge_chair';
+        const proceduralModel = buildProceduralFurnitureModel(categoryName, geometryType, '#A17A16');
+        modelGroup.add(proceduralModel);
+        setIsLoading(false);
+        setLoadingProgress(100);
+        if (onLoadSuccess) onLoadSuccess();
+      }
+    );
 
     // 7. Render Animation Loop
     let animationFrameId;

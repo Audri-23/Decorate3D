@@ -208,8 +208,15 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user, onNavi
     // Valid file selected
     setGlbFile(file);
     setGlbFileName(file.name);
-    const previewUrl = URL.createObjectURL(file);
-    setGlbPreviewUrl(previewUrl);
+    
+    // Read GLB binary file as Base64 Data URL for persistent storage & Three.js GLTFLoader parsing
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setGlbPreviewUrl(event.target.result);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   // Handle image file upload selection
@@ -308,28 +315,8 @@ function compressImageDataUrl(dataUrl, maxWidth = 800, quality = 0.7) {
 
       if (glbFile) {
         setProcessingProgress(40);
-
-        if (glbFile.size < 3.5 * 1024 * 1024) {
-          const formData = new FormData();
-          formData.append('files', glbFile);
-
-          try {
-            const uploadRes = await fetch('/api/products/upload', {
-              method: 'POST',
-              body: formData
-            });
-            if (uploadRes.ok) {
-              const uploadData = await uploadRes.json();
-              if (uploadData.success && uploadData.data?.model3DUrl) {
-                uploadedGlbUrl = uploadData.data.model3DUrl;
-              }
-            }
-          } catch (upErr) {
-            console.warn('GLB file upload network notice:', upErr);
-          }
-        } else {
-          console.info(`GLB file size (${(glbFile.size / 1024 / 1024).toFixed(1)}MB) exceeds Vercel serverless request limit (4.5MB). Using category static model URL.`);
-          uploadedGlbUrl = defaultModelUrl;
+        if (glbPreviewUrl) {
+          uploadedGlbUrl = glbPreviewUrl;
         }
       }
 
