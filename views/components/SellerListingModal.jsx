@@ -3,9 +3,10 @@ import { X, Camera, Upload, CheckCircle, Sparkles, Box, ShieldCheck, RefreshCw, 
 import { Viewer3DCanvas } from './Viewer3DCanvas.jsx';
 import { DamageAssessorWidget } from '../features/f1-damage-assessment/DamageAssessorWidget.jsx';
 
-export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
+export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user, onNavigateToMarketplace }) => {
   const [activeStep, setActiveStep] = useState('details'); // 'details' or 'multi_angle_capture'
   const [captureMethod, setCaptureMethod] = useState('upload'); // 'upload' or 'camera'
+  const [createdSuccessProduct, setCreatedSuccessProduct] = useState(null);
 
   // Form State
   const [title, setTitle] = useState('');
