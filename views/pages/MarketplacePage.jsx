@@ -13,10 +13,18 @@ export const MarketplacePage = ({ products, onSelectProduct, open3DInspector }) 
   const conditions = ['All', 'EXCELLENT', 'GOOD', 'FAIR'];
 
   const filteredProducts = products.filter(p => {
-    const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCat = selectedCategory === 'All' || p.category.toLowerCase() === selectedCategory.toLowerCase();
-    const matchesCond = selectedCondition === 'All' || p.conditionGrade.toUpperCase() === selectedCondition;
+    const titleStr = (p.title || '').toLowerCase();
+    const descStr = (p.description || '').toLowerCase();
+    const qStr = searchQuery.toLowerCase();
+    const matchesSearch = !qStr || titleStr.includes(qStr) || descStr.includes(qStr);
+
+    const pCat = (p.category || '').toLowerCase();
+    const selCat = selectedCategory.toLowerCase();
+    const matchesCat = selectedCategory === 'All' || pCat === selCat || pCat.includes(selCat) || selCat.includes(pCat);
+
+    const pCond = (p.conditionGrade || 'GOOD').toUpperCase();
+    const matchesCond = selectedCondition === 'All' || pCond === selectedCondition;
+
     return matchesSearch && matchesCat && matchesCond;
   });
 

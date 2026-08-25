@@ -84,9 +84,9 @@ export const getProducts = async (req, res) => {
       const dbProducts = await ProductModel.find().sort({ createdAt: -1 }).lean();
       const dbIds = new Set((dbProducts || []).map(p => String(p._id)));
 
-      // Combine dbProducts + seedProductsData items not in DB yet
+      // Combine dbProducts at the top (newest first) + seedProductsData items not in DB
       const extraSeed = seedProductsData.filter(p => !dbIds.has(String(p._id)));
-      products = [...extraSeed, ...(dbProducts || [])];
+      products = [...(dbProducts || []), ...extraSeed];
 
       if (products.length === 0) {
         products = [...seedProductsData];
