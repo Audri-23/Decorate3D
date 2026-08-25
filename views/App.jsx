@@ -601,15 +601,11 @@ export default function App() {
         user={user}
         isOpen={isSellerListingOpen}
         onClose={() => setIsSellerListingOpen(false)}
+        onNavigateToMarketplace={() => changeTab('marketplace')}
         onAddProduct={(newProd) => {
           setProducts(prev => [newProd, ...prev]);
           setSelectedProduct(newProd);
           fetchProducts();
-          showCenteredNotification(
-            'success',
-            '3D Model Generated & Item Published',
-            `"${newProd.title}" ($${newProd.price}) has been successfully listed in your seller 3D inventory!`
-          );
         }}
       />
 

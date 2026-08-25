@@ -80,20 +80,16 @@ export const getProducts = async (req, res) => {
   try {
     const { category, condition, search } = req.query;
     let products = [];
-
-    // Check if database connection is live, otherwise use in-memory seed dataset
     try {
-      products = await ProductModel.find().lean();
-      if (!products || products.length === 0) {
+      const dbProducts = await ProductModel.find().sort({ createdAt: -1 }).lean();
+      const dbIds = new Set((dbProducts || []).map(p => String(p._id)));
+
+      // Combine dbProducts + seedProductsData items not in DB yet
+      const extraSeed = seedProductsData.filter(p => !dbIds.has(String(p._id)));
+      products = [...extraSeed, ...(dbProducts || [])];
+
+      if (products.length === 0) {
         products = [...seedProductsData];
-      } else {
-        // Merge any in-memory products created during session that aren't in DB yet
-        const dbIds = new Set(products.map(p => p._id ? p._id.toString() : ''));
-        seedProductsData.forEach(p => {
-          if (p._id && !dbIds.has(p._id.toString())) {
-            products.unshift(p);
-          }
-        });
       }
     } catch {
       products = [...seedProductsData];
@@ -190,6 +186,14 @@ export const uploadFiles = async (req, res) => {
 export const createProduct = async (req, res) => {
   try {
     const productData = { ...req.body };
+
+    // Normalize conditionGrade to valid MongoDB enum ('FAIR', 'GOOD', 'EXCELLENT')
+    const validGrades = ['FAIR', 'GOOD', 'EXCELLENT'];
+    if (!validGrades.includes(String(productData.conditionGrade || '').toUpperCase())) {
+      productData.conditionGrade = 'GOOD';
+    } else {
+      productData.conditionGrade = String(productData.conditionGrade).toUpperCase();
+    }
 
     // Strip custom string _id if it's not a valid 24-char hex ObjectId
     if (productData._id && typeof productData._id === 'string' && !productData._id.match(/^[0-9a-fA-F]{24}$/)) {

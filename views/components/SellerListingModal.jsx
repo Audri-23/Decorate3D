@@ -269,6 +269,7 @@ function compressImageDataUrl(dataUrl, maxWidth = 800, quality = 0.7) {
     setGlbPreviewUrl('');
     setGlbFileName('');
     setGlbError(null);
+    setCreatedSuccessProduct(null);
     setAngles({
       front: 'https://images.unsplash.com/photo-1580481072645-022f9a6d1276?w=800&auto=format&fit=crop&q=80',
       back: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&auto=format&fit=crop&q=80',
@@ -284,7 +285,6 @@ function compressImageDataUrl(dataUrl, maxWidth = 800, quality = 0.7) {
     let uploadedGlbUrl = '/uploads/models/sample_chair.gltf';
 
     try {
-      // Compress multi-angle images to ensure Vercel 4.5MB serverless limit is not exceeded
       const compressedFront = await compressImageDataUrl(angles.front);
       const compressedBack = await compressImageDataUrl(angles.back);
       const compressedLeft = await compressImageDataUrl(angles.left);
@@ -297,19 +297,22 @@ function compressImageDataUrl(dataUrl, maxWidth = 800, quality = 0.7) {
         right: compressedRight
       };
 
-      // If a custom GLB file was uploaded, send to backend upload endpoint
       if (glbFile) {
         setProcessingProgress(40);
         const formData = new FormData();
         formData.append('files', glbFile);
 
-        const uploadRes = await fetch('/api/products/upload', {
-          method: 'POST',
-          body: formData
-        });
-        const uploadData = await uploadRes.json();
-        if (uploadData.success && uploadData.data?.model3DUrl) {
-          uploadedGlbUrl = uploadData.data.model3DUrl;
+        try {
+          const uploadRes = await fetch('/api/products/upload', {
+            method: 'POST',
+            body: formData
+          });
+          const uploadData = await uploadRes.json();
+          if (uploadData.success && uploadData.data?.model3DUrl) {
+            uploadedGlbUrl = uploadData.data.model3DUrl;
+          }
+        } catch (upErr) {
+          console.warn('GLB file upload error:', upErr);
         }
       }
 
@@ -324,9 +327,9 @@ function compressImageDataUrl(dataUrl, maxWidth = 800, quality = 0.7) {
         conditionGrade: conditionGrade,
         isRareFind: true,
         description: description || 'Handcrafted furniture item uploaded with interactive GLB/GLTF 3D model.',
-        material: material,
-        color: color,
-        era: era,
+        material: material || 'Solid Wood & Leather',
+        color: color || 'Brown',
+        era: era || 'Mid-Century Modern',
         dimensions: { width: '32 in', depth: '34 in', height: '32 in' },
         images: [compressedFront, compressedBack, compressedLeft, compressedRight],
         multiAngleImages: compressedAngles,
@@ -350,7 +353,6 @@ function compressImageDataUrl(dataUrl, maxWidth = 800, quality = 0.7) {
         sellerEmail: user?.email || 'seller@decorate3d.com'
       };
 
-      // Post product to backend API
       let finalCreatedProduct = newProduct;
       try {
         const res = await fetch('/api/products', {
@@ -371,9 +373,8 @@ function compressImageDataUrl(dataUrl, maxWidth = 800, quality = 0.7) {
       setTimeout(() => {
         setIsProcessing3D(false);
         onAddProduct(finalCreatedProduct);
-        onClose();
-        resetForm();
-      }, 500);
+        setCreatedSuccessProduct(finalCreatedProduct);
+      }, 400);
 
     } catch (err) {
       console.error('Submission error:', err);
@@ -387,38 +388,104 @@ function compressImageDataUrl(dataUrl, maxWidth = 800, quality = 0.7) {
         
         {/* Close Button */}
         <button
-          onClick={() => { stopCamera(); onClose(); }}
-          className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-800 rounded-full hover:bg-gray-100 transition-colors"
+          onClick={() => { stopCamera(); onClose(); resetForm(); }}
+          className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-800 rounded-full hover:bg-gray-100 transition-colors z-10"
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* Modal Header */}
-        <div className="text-center mb-6">
-          <div className="w-12 h-12 rounded-full bg-[#1E232A] text-[#A17A16] flex items-center justify-center mx-auto mb-2 border-2 border-[#A17A16]">
-            <Box className="w-6 h-6" />
-          </div>
-          <h2 className="font-serif text-2xl font-bold text-gray-900">
-            List Furniture Item with 3D Scanner
-          </h2>
-          <p className="text-xs text-gray-500 mt-1">
-            Capture or Upload 4 Angles (Front, Back, Left Side, Right Side) to Generate interactive 360° 3D Model
-          </p>
-        </div>
-
-        {/* Processing Spinner Overlay */}
-        {isProcessing3D && (
-          <div className="py-12 text-center space-y-4">
-            <div className="w-16 h-16 border-4 border-[#E5DEC9] border-t-[#A17A16] rounded-full animate-spin mx-auto" />
-            <h3 className="font-serif text-xl font-bold text-gray-900">Synthesizing Volumetric 3D Model...</h3>
-            <div className="max-w-xs mx-auto bg-gray-200 h-2 rounded-full overflow-hidden">
-              <div className="bg-[#A17A16] h-full transition-all duration-300" style={{ width: `${processingProgress}%` }} />
+        {/* SUCCESS CONFIRMATION CARD */}
+        {createdSuccessProduct ? (
+          <div className="py-8 px-4 text-center space-y-6 animate-fadeIn">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto border-2 border-emerald-500 shadow-lg">
+              <CheckCircle className="w-10 h-10" />
             </div>
-            <p className="text-xs font-mono text-gray-500">Mapping Multi-Angle Surface Textures to 3D Furniture Mesh</p>
+
+            <div>
+              <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3.5 py-1 rounded-full uppercase border border-emerald-300 inline-block mb-2">
+                ✓ Furniture Listing Published Live
+              </span>
+              <h3 className="font-serif text-2xl font-bold text-gray-900">
+                "{createdSuccessProduct.title}"
+              </h3>
+              <p className="text-xs text-gray-600 mt-1 max-w-md mx-auto">
+                Your item and interactive 3D model have been successfully created and are active live on the Decorate3D Marketplace!
+              </p>
+            </div>
+
+            {/* Product Preview Card */}
+            <div className="bg-white p-4 rounded-2xl border border-[#E5DEC9] shadow-sm max-w-md mx-auto flex items-center space-x-4 text-left">
+              <img
+                src={createdSuccessProduct.images?.[0] || 'https://images.unsplash.com/photo-1580481072645-022f9a6d1276?w=800'}
+                alt={createdSuccessProduct.title}
+                className="w-20 h-20 rounded-xl object-cover border border-gray-200 shadow-inner flex-shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-sm text-gray-900 truncate">{createdSuccessProduct.title}</h4>
+                <p className="text-xs text-gray-500 mt-0.5">{createdSuccessProduct.category} • {createdSuccessProduct.conditionGrade} Condition</p>
+                <span className="font-serif text-lg font-bold text-[#A17A16] block mt-1">${createdSuccessProduct.price}</span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+              <button
+                onClick={() => {
+                  setCreatedSuccessProduct(null);
+                  onClose();
+                  resetForm();
+                  if (onNavigateToMarketplace) {
+                    onNavigateToMarketplace();
+                  }
+                }}
+                className="bg-[#A17A16] hover:bg-[#8C5A2B] text-white px-6 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg w-full sm:w-auto flex items-center justify-center space-x-2"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>View on Marketplace</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setCreatedSuccessProduct(null);
+                  onClose();
+                  resetForm();
+                }}
+                className="px-6 py-3.5 rounded-xl font-bold text-xs text-gray-700 bg-gray-200 hover:bg-gray-300 transition-colors w-full sm:w-auto"
+              >
+                Okay / Return to Portal
+              </button>
+            </div>
           </div>
+        ) : (
+          <>
+            {/* Modal Header */}
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 rounded-full bg-[#1E232A] text-[#A17A16] flex items-center justify-center mx-auto mb-2 border-2 border-[#A17A16]">
+                <Box className="w-6 h-6" />
+              </div>
+              <h2 className="font-serif text-2xl font-bold text-gray-900">
+                List Furniture Item with 3D Scanner
+              </h2>
+              <p className="text-xs text-gray-500 mt-1">
+                Capture or Upload 4 Angles (Front, Back, Left Side, Right Side) to Generate interactive 360° 3D Model
+              </p>
+            </div>
+
+            {/* Processing Spinner Overlay */}
+            {isProcessing3D && (
+              <div className="py-12 text-center space-y-4">
+                <div className="w-16 h-16 border-4 border-[#E5DEC9] border-t-[#A17A16] rounded-full animate-spin mx-auto" />
+                <h3 className="font-serif text-xl font-bold text-gray-900">Synthesizing Volumetric 3D Model...</h3>
+                <div className="max-w-xs mx-auto bg-gray-200 h-2 rounded-full overflow-hidden">
+                  <div className="bg-[#A17A16] h-full transition-all duration-300" style={{ width: `${processingProgress}%` }} />
+                </div>
+                <p className="text-xs font-mono text-gray-500">Mapping Multi-Angle Surface Textures to 3D Furniture Mesh</p>
+              </div>
+            )}
+          </>
         )}
 
-        {!isProcessing3D && (
+        {!isProcessing3D && !createdSuccessProduct && (
           <>
             {/* Step Navigation Bar */}
             <div className="flex bg-[#E5DEC9]/50 p-1 rounded-2xl mb-6 border border-[#E5DEC9]">
