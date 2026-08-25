@@ -212,12 +212,43 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
   };
 
   // Handle image file upload selection
+// Compress image data URL to lightweight JPEG (<100KB) to ensure Vercel 4.5MB request limit is never exceeded
+function compressImageDataUrl(dataUrl, maxWidth = 800, quality = 0.7) {
+  return new Promise((resolve) => {
+    if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image')) {
+      resolve(dataUrl);
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
   const handleFileUpload = (e, angleKey) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        setAngles(prev => ({ ...prev, [angleKey]: event.target.result }));
+      reader.onload = async (event) => {
+        const compressed = await compressImageDataUrl(event.target.result);
+        setAngles(prev => ({ ...prev, [angleKey]: compressed }));
       };
       reader.readAsDataURL(file);
     }
@@ -253,6 +284,19 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
     let uploadedGlbUrl = '/uploads/models/sample_chair.gltf';
 
     try {
+      // Compress multi-angle images to ensure Vercel 4.5MB serverless limit is not exceeded
+      const compressedFront = await compressImageDataUrl(angles.front);
+      const compressedBack = await compressImageDataUrl(angles.back);
+      const compressedLeft = await compressImageDataUrl(angles.left);
+      const compressedRight = await compressImageDataUrl(angles.right);
+
+      const compressedAngles = {
+        front: compressedFront,
+        back: compressedBack,
+        left: compressedLeft,
+        right: compressedRight
+      };
+
       // If a custom GLB file was uploaded, send to backend upload endpoint
       if (glbFile) {
         setProcessingProgress(40);
@@ -284,8 +328,8 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
         color: color,
         era: era,
         dimensions: { width: '32 in', depth: '34 in', height: '32 in' },
-        images: [angles.front, angles.back, angles.left, angles.right],
-        multiAngleImages: angles,
+        images: [compressedFront, compressedBack, compressedLeft, compressedRight],
+        multiAngleImages: compressedAngles,
         has3DModel: true,
         model3D: {
           url: uploadedGlbUrl,
