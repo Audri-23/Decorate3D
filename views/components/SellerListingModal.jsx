@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Camera, Upload, CheckCircle, Sparkles, Box, ShieldCheck, RefreshCw, Layers, AlertCircle, FileCode } from 'lucide-react';
+import { X, Camera, Upload, CheckCircle, Sparkles, Box, ShieldCheck, RefreshCw, Layers, AlertCircle, FileCode, ShoppingBag } from 'lucide-react';
 import { Viewer3DCanvas } from './Viewer3DCanvas.jsx';
 import { DamageAssessorWidget } from '../features/f1-damage-assessment/DamageAssessorWidget.jsx';
 
