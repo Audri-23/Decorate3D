@@ -211,7 +211,7 @@ Strict Rules:
 - Return ONLY the raw valid JSON matching the schema. No markdown formatting.
 `;
 
-    // 5. Send request to Google Gemini API (gemini-3.5-flash model)
+    // 5. Send request to Google Gemini API (gemini-3.5-flash-lite model)
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
     
     const responseSchema = {

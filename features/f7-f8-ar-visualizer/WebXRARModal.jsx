@@ -636,7 +636,7 @@ export const WebXRARModal = ({ product, isOpen, onClose, onOpenFitValidation }) 
               className="w-full max-w-sm gold-gradient-btn py-3 px-4 rounded-2xl font-mono text-xs font-bold tracking-wider shadow-2xl flex items-center justify-center space-x-2 border border-[#E9D3A4]/60 active:scale-95 transition-all"
             >
               <Ruler className="w-4 h-4 text-gray-900" />
-              <span>MEASURE & VALIDATE ROOM FIT (F8)</span>
+              <span>MEASURE & VALIDATE ROOM FIT</span>
             </button>
           </div>
         </div>
@@ -653,7 +653,7 @@ export const WebXRARModal = ({ product, isOpen, onClose, onOpenFitValidation }) 
                 <Smartphone className="w-5 h-5 text-[#E9D3A4]" />
               </div>
               <div>
-                <span className="text-[10px] font-mono text-[#E9D3A4] uppercase tracking-wider block">MODULE 3 FEATURE 3 (F7)</span>
+                <span className="text-[10px] font-mono text-[#E9D3A4] uppercase tracking-wider block">WEBXR SPATIAL VISUALIZER</span>
                 <h3 className="font-serif text-lg font-bold text-white">WebXR AR Camera Visualizer</h3>
               </div>
             </div>
@@ -731,7 +731,7 @@ export const WebXRARModal = ({ product, isOpen, onClose, onOpenFitValidation }) 
               className="w-full bg-[#14181D] hover:bg-black text-[#E9D3A4] py-3.5 rounded-2xl font-mono text-xs font-bold border border-[#E9D3A4]/40 flex items-center justify-center space-x-2 transition-all"
             >
               <Ruler className="w-4 h-4 text-[#E9D3A4]" />
-              <span>OPEN AR MEASUREMENT FIT TOOL (F8)</span>
+              <span>OPEN AR MEASUREMENT FIT TOOL</span>
             </button>
           </div>
 

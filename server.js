@@ -81,6 +81,14 @@ if (fs.existsSync(distPath)) {
   });
 }
 
+// Lazy DB Connection Middleware for Serverless & API calls
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    await connectDB();
+  }
+  next();
+});
+
 // Connect DB, Init Email Transporter & Start Server
 connectDB().then(async () => {
   await initEmailTransporter();
@@ -109,3 +117,5 @@ connectDB().then(async () => {
     }
   });
 });
+
+export default app;

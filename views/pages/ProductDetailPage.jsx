@@ -145,7 +145,7 @@ export const ProductDetailPage = ({ product, open3DInspector, onAddToCart, onLau
             <button
               onClick={() => onOpenARCamera(product)}
               className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-[#E9D3A4] hover:border-[#A17A16] bg-[#F9F4E9] flex flex-col items-center justify-center text-[#A17A16] transition-all group shadow-sm"
-              title="Launch WebXR AR Camera Overlay (F7)"
+              title="Launch WebXR AR Camera Overlay"
             >
               <Smartphone className="w-5 h-5 sm:w-6 sm:h-6 transition-transform group-hover:scale-110" />
               <span className="text-[9px] sm:text-[10px] font-mono font-bold mt-1">AR VIEW</span>
@@ -263,7 +263,7 @@ export const ProductDetailPage = ({ product, open3DInspector, onAddToCart, onLau
               className="w-full bg-white hover:bg-[#F9F4E9] text-gray-900 font-mono font-bold py-3.5 rounded-xl text-sm border border-[#E5DEC9] transition-all flex items-center justify-center space-x-2 shadow-sm"
             >
               <Ruler className="w-4 h-4 text-[#A17A16]" />
-              <span>MEASURE &amp; VALIDATE ROOM FIT (F8)</span>
+              <span>MEASURE &amp; VALIDATE ROOM FIT</span>
             </button>
           </div>
 

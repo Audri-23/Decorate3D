@@ -50,7 +50,7 @@ export const ARFitValidationModal = ({ product, isOpen, onClose, onLaunchAROverl
               <Ruler className="w-5 h-5 text-[#E9D3A4]" />
             </div>
             <div>
-              <span className="text-[10px] font-mono text-[#E9D3A4] uppercase tracking-wider block">MODULE 3 FEATURE 4 (F8)</span>
+              <span className="text-[10px] font-mono text-[#E9D3A4] uppercase tracking-wider block">ROOM FIT VALIDATION STUDIO</span>
               <h3 className="font-serif text-lg font-bold text-white">AR Measurement & Fit Validation</h3>
             </div>
           </div>
@@ -98,7 +98,7 @@ export const ARFitValidationModal = ({ product, isOpen, onClose, onLaunchAROverl
                 }`}
             >
               <Smartphone className="w-4 h-4" />
-              <span>AR CAMERA DEPTH (F7)</span>
+              <span>AR CAMERA DEPTH</span>
             </button>
           </div>
 
@@ -117,7 +117,8 @@ export const ARFitValidationModal = ({ product, isOpen, onClose, onLaunchAROverl
                   value={measurementInput}
                   onChange={(e) => setMeasurementInput(e.target.value)}
                   placeholder="e.g. 85"
-                  className="flex-1 bg-[#14181D] text-white placeholder-gray-500 border border-[#E9D3A4]/60 px-4 py-3 rounded-2xl text-lg font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#E9D3A4]/40"
+                  className="flex-1 border border-[#E9D3A4]/60 px-4 py-3 rounded-2xl text-lg font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#E9D3A4]/40"
+                  style={{ backgroundColor: '#14181D', color: '#FFFFFF', caretColor: '#FFFFFF' }}
                 />
 
                 <div className="flex bg-[#14181D] border border-white/10 rounded-2xl p-1 font-mono text-xs font-bold">
@@ -178,7 +179,7 @@ export const ARFitValidationModal = ({ product, isOpen, onClose, onLaunchAROverl
                 }}
                 className="w-full gold-gradient-btn py-3 rounded-xl font-bold text-xs shadow-md flex items-center justify-center space-x-2"
               >
-                <span>LAUNCH AR CAMERA OVERLAY (F7)</span>
+                <span>LAUNCH AR CAMERA OVERLAY</span>
                 <ChevronRight className="w-4 h-4 text-gray-900" />
               </button>
             </div>
