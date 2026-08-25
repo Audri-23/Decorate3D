@@ -146,18 +146,20 @@ export default function App() {
       .then(res => res.json())
       .then(data => {
         let apiProds = (data.success && data.data && data.data.length > 0) ? data.data : seedProductsData;
-        const savedCustomProds = localStorage.getItem('decorate3d_custom_products');
-        if (savedCustomProds) {
-          try {
-            const customList = JSON.parse(savedCustomProds);
-            if (Array.isArray(customList) && customList.length > 0) {
-              const existingIds = new Set(apiProds.map(p => String(p._id)));
-              const uniqueCustom = customList.filter(cp => !existingIds.has(String(cp._id)));
-              apiProds = [...uniqueCustom, ...apiProds];
-            }
-          } catch (e) {}
-        }
-        setProducts(apiProds);
+        setProducts(prev => {
+          const existingIds = new Set(apiProds.map(p => String(p._id)));
+          const savedCustomProds = localStorage.getItem('decorate3d_custom_products');
+          let customList = [];
+          if (savedCustomProds) {
+            try { customList = JSON.parse(savedCustomProds) || []; } catch(e){}
+          }
+          const stateCustom = (prev || []).filter(p => !seedProductsData.some(sp => String(sp._id) === String(p._id)));
+          const allCustom = [...stateCustom, ...customList];
+          const uniqueCustom = allCustom.filter((cp, idx, self) =>
+            !existingIds.has(String(cp._id)) && self.findIndex(t => String(t._id) === String(cp._id)) === idx
+          );
+          return [...uniqueCustom, ...apiProds];
+        });
       })
       .catch(() => {
         const savedCustomProds = localStorage.getItem('decorate3d_custom_products');
@@ -165,7 +167,15 @@ export default function App() {
           try {
             const customList = JSON.parse(savedCustomProds);
             if (Array.isArray(customList) && customList.length > 0) {
-              setProducts([...customList, ...seedProductsData]);
+              setProducts(prev => {
+                const existingIds = new Set(seedProductsData.map(p => String(p._id)));
+                const stateCustom = (prev || []).filter(p => !existingIds.has(String(p._id)));
+                const allCustom = [...stateCustom, ...customList];
+                const uniqueCustom = allCustom.filter((cp, idx, self) =>
+                  !existingIds.has(String(cp._id)) && self.findIndex(t => String(t._id) === String(cp._id)) === idx
+                );
+                return [...uniqueCustom, ...seedProductsData];
+              });
             }
           } catch (e) {}
         }
