@@ -117,7 +117,7 @@ export const ARFitValidationModal = ({ product, isOpen, onClose, onLaunchAROverl
                   value={measurementInput}
                   onChange={(e) => setMeasurementInput(e.target.value)}
                   placeholder="e.g. 85"
-                  className="flex-1 bg-[#14181D] text-[#856E11] placeholder-gray-500 border border-[#E9D3A4]/60 px-4 py-3 rounded-2xl text-lg font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#E9D3A4]/40"
+                  className="flex-1 bg-[#14181D] text-white placeholder-gray-500 border border-[#E9D3A4]/60 px-4 py-3 rounded-2xl text-lg font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#E9D3A4]/40"
                 />
 
                 <div className="flex bg-[#14181D] border border-white/10 rounded-2xl p-1 font-mono text-xs font-bold">
