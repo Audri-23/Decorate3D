@@ -319,8 +319,22 @@ function compressImageDataUrl(dataUrl, maxWidth = 800, quality = 0.7) {
 
       if (glbFile) {
         setProcessingProgress(40);
-        if (glbPreviewUrl) {
-          uploadedGlbUrl = glbPreviewUrl;
+        try {
+          const formData = new FormData();
+          formData.append('files', glbFile);
+          const uploadRes = await fetch('/api/products/upload', {
+            method: 'POST',
+            body: formData
+          });
+          const uploadData = await uploadRes.json();
+          if (uploadData.success && uploadData.data?.model3DUrl) {
+            uploadedGlbUrl = uploadData.data.model3DUrl;
+          } else if (glbPreviewUrl) {
+            uploadedGlbUrl = glbPreviewUrl;
+          }
+        } catch (uploadErr) {
+          console.warn('[SellerListingModal] Server GLB file upload note:', uploadErr);
+          if (glbPreviewUrl) uploadedGlbUrl = glbPreviewUrl;
         }
       }
 
@@ -342,6 +356,7 @@ function compressImageDataUrl(dataUrl, maxWidth = 800, quality = 0.7) {
         images: [compressedFront, compressedBack, compressedLeft, compressedRight],
         multiAngleImages: compressedAngles,
         has3DModel: true,
+        modelUrl: uploadedGlbUrl,
         model3D: {
           url: uploadedGlbUrl,
           source: 'upload',

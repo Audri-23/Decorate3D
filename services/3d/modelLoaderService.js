@@ -121,6 +121,12 @@ class ModelLoaderService {
         });
       }
 
+      // Add headers to bypass localtunnel/ngrok landing page warnings for raw GLB asset downloads
+      this.loader.setRequestHeader({
+        'bypass-tunnel-reminder': 'true',
+        'ngrok-skip-browser-warning': 'true'
+      });
+
       this.loader.load(
         fullUrl,
         (gltf) => {

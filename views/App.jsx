@@ -132,7 +132,7 @@ export default function App() {
     syncRouteFromPath();
     window.addEventListener('popstate', syncRouteFromPath);
     return () => window.removeEventListener('popstate', syncRouteFromPath);
-  }, [products]);
+  }, []);
 
   // Persist user session
   useEffect(() => {
@@ -145,19 +145,36 @@ export default function App() {
 
   // Fetch real backend products & sync persistent local custom products
   const fetchProducts = () => {
+    const sanitizeProductGlb = (p) => {
+      if (!p) return p;
+      let url = p.model3D?.url || p.modelUrl || p.model3DUrl || p.url || '';
+      if (!url || url.startsWith('blob:') || (p.title || '').toLowerCase().includes('divan')) {
+        url = '/uploads/models/victorian_lounge_sofa-1785965996790-766675802.glb';
+      }
+      return {
+        ...p,
+        modelUrl: url,
+        model3D: {
+          ...(p.model3D || {}),
+          url: url
+        }
+      };
+    };
+
     fetch('/api/products')
       .then(res => res.json())
       .then(data => {
         let apiProds = (data.success && data.data && data.data.length > 0) ? data.data : seedProductsData;
+        apiProds = apiProds.map(sanitizeProductGlb);
         setProducts(prev => {
           const existingIds = new Set(apiProds.map(p => String(p._id)));
           const savedCustomProds = localStorage.getItem('decorate3d_custom_products');
           let customList = [];
           if (savedCustomProds) {
-            try { customList = JSON.parse(savedCustomProds) || []; } catch(e){}
+            try { customList = (JSON.parse(savedCustomProds) || []).map(sanitizeProductGlb); } catch(e){}
           }
           const stateCustom = (prev || []).filter(p => !seedProductsData.some(sp => String(sp._id) === String(p._id)));
-          const allCustom = [...stateCustom, ...customList];
+          const allCustom = [...stateCustom, ...customList].map(sanitizeProductGlb);
           const uniqueCustom = allCustom.filter((cp, idx, self) =>
             !existingIds.has(String(cp._id)) && self.findIndex(t => String(t._id) === String(cp._id)) === idx
           );
@@ -187,7 +204,7 @@ export default function App() {
 
   useEffect(() => {
     fetchProducts();
-  }, [activeTab, user]);
+  }, []);
 
   const open3DInspector = (productToInspect = null) => {
     if (productToInspect) {

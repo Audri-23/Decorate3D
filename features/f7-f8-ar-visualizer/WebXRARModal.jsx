@@ -232,9 +232,13 @@ export const WebXRARModal = ({ product, isOpen, onClose, onOpenFitValidation }) 
       };
 
       // Load Product GLB/GLTF model
-      const rawUrl = product?.model3D?.url || '/uploads/models/sample_chair.gltf';
+      const rawUrl = product?.model3D?.url || product?.modelUrl || product?.model3DUrl || product?.url || '/uploads/models/sample_chair.gltf';
       const modelUrl = rawUrl.startsWith('http') ? rawUrl : `${window.location.origin}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
       const loader = new GLTFLoader();
+      loader.setRequestHeader({
+        'bypass-tunnel-reminder': 'true',
+        'ngrok-skip-browser-warning': 'true'
+      });
 
       loader.load(
         modelUrl,
@@ -451,28 +455,7 @@ export const WebXRARModal = ({ product, isOpen, onClose, onOpenFitValidation }) 
   // Manual placement trigger helper for DOM tap
   const handleViewportTap = (e) => {
     if (!rawLoadedModelRef.current || !placedModelGroupRef.current) return;
-
-    try {
-      if ('vibrate' in navigator) {
-        navigator.vibrate(50);
-      }
-    } catch (e) { }
-
-    if (placedModelGroupRef.current.children.length === 0) {
-      const clone = rawLoadedModelRef.current.clone(true);
-      clone.traverse((child) => {
-        if (child.isMesh) {
-          child.visible = true;
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
-      clone.position.set(0, 0, 0);
-      clone.rotation.set(0, 0, 0);
-      placedModelGroupRef.current.add(clone);
-      setIsModelPlaced(true);
-      triggerPlacedNotification();
-    }
+    placeFurnitureModel();
   };
 
   if (!isOpen || !product) return null;

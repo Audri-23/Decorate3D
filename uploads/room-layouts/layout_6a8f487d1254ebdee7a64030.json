@@ -6,14 +6,14 @@
     "unit": "m"
   },
   "wallCustomization": {
-    "paintColor": "#4A5568",
+    "paintColor": "#EAE6E1",
     "wallMaterial": "plaster"
   },
   "floorCustomization": {
-    "floorMaterial": "walnut",
+    "floorMaterial": "hardwood_oak",
     "tintColor": "#C29B72"
   },
-  "_id": "6a8dcd575aef64c07e30e6ba",
+  "_id": "6a8f487d1254ebdee7a64030",
   "userId": "guest_user",
   "layoutName": "My Custom Floor Plan",
   "openings": [],
@@ -30,26 +30,26 @@
         "z": 0
       },
       "scale": {
-        "x": 1,
-        "y": 1,
-        "z": 1
+        "x": 1.55,
+        "y": 1.55,
+        "z": 1.55
       },
       "dimensions": {
         "width": 0.9,
         "depth": 0.9,
         "height": 0.85
       },
-      "id": "item_1787775114774_t849",
+      "id": "item_1787775090822_hep9",
       "productId": null,
       "title": "Vintage Divan",
       "category": "Sofas",
       "placementType": "FLOOR",
       "modelUrl": "/uploads/models/victorian_lounge_sofa-1785965996790-766675802.glb",
       "customFrameImageUrl": null,
-      "_id": "6a8f48951254ebdee7a6403c"
+      "_id": "6a8f487f1254ebdee7a64036"
     }
   ],
-  "createdAt": "2026-08-25T17:13:59.641Z",
-  "updatedAt": "2026-08-26T20:12:05.241Z",
+  "createdAt": "2026-08-26T20:11:41.339Z",
+  "updatedAt": "2026-08-26T20:11:43.753Z",
   "__v": 0
 }

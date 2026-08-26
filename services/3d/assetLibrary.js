@@ -26,12 +26,12 @@ export const BUILTIN_3D_ASSET_LIBRARY = [
   // Authentic User-Uploaded Real GLB Models
   {
     id: 'asset_sofa_victorian_luxury',
-    title: 'Victorian Tufted Leather Lounge Sofa',
+    title: 'Vintage Divan',
     category: ASSET_CATEGORIES.SOFAS,
     placementType: 'FLOOR',
     modelUrl: '/uploads/models/victorian_lounge_sofa-1785965996790-766675802.glb',
     thumbnailUrl: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&auto=format&fit=crop&q=80',
     dimensions: { width: 2.2, depth: 0.95, height: 0.88 },
-    description: 'Authentic 12MB 3D GLB model of a classic Victorian tufted leather lounge sofa with dark mahogany trim.'
+    description: 'Authentic 12MB 3D GLB model of a classic Vintage Divan / Victorian tufted leather lounge sofa.'
   }
 ];

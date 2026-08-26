@@ -126,8 +126,9 @@ export const seedProductsData = [
       top: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&auto=format&fit=crop&q=80"
     },
     has3DModel: true,
+    modelUrl: "/uploads/models/victorian_lounge_sofa-1785965996790-766675802.glb",
     model3D: {
-      url: "/uploads/models/sample_sofa.gltf",
+      url: "/uploads/models/victorian_lounge_sofa-1785965996790-766675802.glb",
       source: "upload",
       archivalSeries: "Heritage Collection № 003",
       polygonCount: "198.5k",

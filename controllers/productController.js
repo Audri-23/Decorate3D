@@ -200,6 +200,14 @@ export const createProduct = async (req, res) => {
       delete productData._id;
     }
 
+    // Ensure modelUrl and model3D.url are consistently set
+    const glbUrl = productData.model3D?.url || productData.modelUrl || productData.model3DUrl || '';
+    if (glbUrl) {
+      if (!productData.model3D) productData.model3D = { url: glbUrl };
+      else productData.model3D.url = glbUrl;
+      productData.modelUrl = glbUrl;
+    }
+
     let newProduct;
 
     try {

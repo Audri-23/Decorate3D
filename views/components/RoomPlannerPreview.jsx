@@ -61,7 +61,7 @@ export const RoomPlannerPreview = ({ product, isOpen, onClose, initialMarketplac
   const [selectedCategory, setSelectedCategory] = useState(ASSET_CATEGORIES.SOFAS);
   const [activeMobileDrawer, setActiveMobileDrawer] = useState(null); // null | 'library' | 'settings'
 
-  // Fetch saved layouts and custom models from backend on modal open
+  // Fetch saved layouts and custom models from backend on modal open (always start with an empty room grid by default)
   useEffect(() => {
     if (isOpen) {
       setPlacedItems([]);
@@ -579,10 +579,10 @@ export const RoomPlannerPreview = ({ product, isOpen, onClose, initialMarketplac
                 <div
                   key={p._id || p.id}
                   onClick={() => {
-                    const resolvedModelUrl = p.model3D?.url || p.modelUrl || (
-                      (p.category || '').toLowerCase().includes('sofa')
+                    const resolvedModelUrl = p.model3D?.url || p.modelUrl || p.model3DUrl || p.url || (
+                      (p.category || '').toLowerCase().includes('sofa') || (p.title || '').toLowerCase().includes('divan')
                         ? '/uploads/models/victorian_lounge_sofa-1785965996790-766675802.glb'
-                        : 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/SheenChair/glTF-Binary/SheenChair.glb'
+                        : '/uploads/models/sample_chair.gltf'
                     );
                     handleAddLibraryAsset({
                       id: p._id || p.id,
