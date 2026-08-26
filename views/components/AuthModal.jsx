@@ -145,15 +145,16 @@ export const AuthModal = ({ isOpen, onClose, onLoginSuccess, initialRole = 'buye
       />
 
       <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+        {/* Close Button - Top Right Corner of Whole Page */}
+        <button
+          onClick={onClose}
+          className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md border border-white/20 shadow-2xl transition-all hover:scale-110 z-50"
+          aria-label="Close modal"
+        >
+          <X className="w-6 h-6" />
+        </button>
+
         <div className="bg-[#FBF9F5] rounded-3xl max-w-md w-full p-8 border border-[#E5DEC9] shadow-2xl relative">
-          
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-800 rounded-full hover:bg-gray-100 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
 
           {/* STEP 1: CREDENTIALS FORM */}
           {activeStep === 'credentials' && (

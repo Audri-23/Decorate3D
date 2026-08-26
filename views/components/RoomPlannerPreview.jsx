@@ -59,6 +59,7 @@ export const RoomPlannerPreview = ({ product, isOpen, onClose, initialMarketplac
 
   // Selected Category filter for Asset Library
   const [selectedCategory, setSelectedCategory] = useState(ASSET_CATEGORIES.SOFAS);
+  const [activeMobileDrawer, setActiveMobileDrawer] = useState(null); // null | 'library' | 'settings'
 
   // Fetch saved layouts and custom models from backend on modal open
   useEffect(() => {
@@ -157,7 +158,7 @@ export const RoomPlannerPreview = ({ product, isOpen, onClose, initialMarketplac
         const layoutId = data.data?._id || selectedLayoutId;
         const relativeDiskPath = data.storageLocation?.diskDirectory || `uploads/room-layouts/layout_${layoutId}.json`;
 
-
+        setSaveSuccessMsg(`Saved to Database!`);
         if (data.data?._id) setSelectedLayoutId(data.data._id);
         setHasUnsavedChanges(false);
         fetchSavedLayouts();
@@ -336,119 +337,132 @@ export const RoomPlannerPreview = ({ product, isOpen, onClose, initialMarketplac
     <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col animate-fade-in select-none">
 
       {/* 1. TOP HEADER TOOLBAR */}
-      <header className="h-16 bg-[#161B22] border-b border-white/10 px-6 flex items-center justify-between z-20 shrink-0">
+      <header className="min-h-14 bg-[#161B22] border-b border-white/10 px-3 lg:px-6 py-2 flex flex-wrap lg:flex-nowrap items-center justify-between gap-2 z-20 shrink-0">
 
         {/* Title & Layout Selector */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#E9D3A4] to-[#C29B72] flex items-center justify-center text-black font-bold shadow-md">
-              <Box className="w-4 h-4" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-[#E9D3A4] to-[#C29B72] flex items-center justify-center text-black font-bold shadow-md shrink-0">
+              <Box className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
             <div>
               <input
                 type="text"
                 value={layoutName}
                 onChange={(e) => { setLayoutName(e.target.value); markDirty(); }}
-                className="bg-transparent font-serif font-bold text-white text-base outline-none hover:bg-white/5 px-2 py-0.5 rounded transition-all focus:bg-white/10"
+                className="bg-transparent font-serif font-bold text-white text-sm sm:text-base outline-none hover:bg-white/5 px-2 py-0.5 rounded transition-all focus:bg-white/10 max-w-[130px] sm:max-w-none"
               />
-              <span className="text-[10px] font-mono text-gray-400 block px-2">
-                Real 3D Spatial Interior Studio {hasUnsavedChanges && <span className="text-amber-400 font-bold ml-1">• Unsaved Edits</span>}
+              <span className="text-[9px] sm:text-[10px] font-mono text-gray-400 block px-2">
+                <span className="hidden sm:inline">Real 3D Spatial Interior Studio </span>{hasUnsavedChanges && <span className="text-amber-400 font-bold">• Unsaved Edits</span>}
               </span>
             </div>
           </div>
         </div>
 
         {/* View Mode & Actions Controls */}
-        <div className="flex items-center space-x-2.5">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5">
 
           {/* View Mode Tabs: 3D, 2D, Walkthrough */}
-          <div className="flex items-center bg-black/40 border border-white/10 p-1 rounded-xl">
+          <div className="flex items-center bg-black/40 border border-white/10 p-0.5 sm:p-1 rounded-xl">
             <button
               onClick={() => setViewMode('3d')}
-              className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all flex items-center space-x-1.5 ${viewMode === '3d' ? 'bg-[#E9D3A4] text-black shadow' : 'text-gray-400 hover:text-white'
+              className={`px-2 py-1 sm:px-3 sm:py-1 rounded-lg text-[10px] sm:text-xs font-mono font-bold transition-all flex items-center space-x-1 ${viewMode === '3d' ? 'bg-[#E9D3A4] text-black shadow' : 'text-gray-400 hover:text-white'
                 }`}
             >
-              <Box className="w-3.5 h-3.5" />
-              <span>3D ORBIT</span>
+              <Box className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span>3D</span>
             </button>
             <button
               onClick={() => setViewMode('2d')}
-              className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all flex items-center space-x-1.5 ${viewMode === '2d' ? 'bg-[#E9D3A4] text-black shadow' : 'text-gray-400 hover:text-white'
+              className={`px-2 py-1 sm:px-3 sm:py-1 rounded-lg text-[10px] sm:text-xs font-mono font-bold transition-all flex items-center space-x-1 ${viewMode === '2d' ? 'bg-[#E9D3A4] text-black shadow' : 'text-gray-400 hover:text-white'
                 }`}
             >
-              <Grid className="w-3.5 h-3.5" />
-              <span>2D CAD</span>
+              <Grid className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span>2D</span>
             </button>
             <button
               onClick={() => setViewMode('walkthrough')}
-              className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all flex items-center space-x-1.5 ${viewMode === 'walkthrough' ? 'bg-[#E9D3A4] text-black shadow' : 'text-gray-400 hover:text-white'
+              className={`px-2 py-1 sm:px-3 sm:py-1 rounded-lg text-[10px] sm:text-xs font-mono font-bold transition-all flex items-center space-x-1 ${viewMode === 'walkthrough' ? 'bg-[#E9D3A4] text-black shadow' : 'text-gray-400 hover:text-white'
                 }`}
             >
-              <Navigation className="w-3.5 h-3.5" />
-              <span>WALKTHROUGH</span>
+              <Navigation className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span className="hidden sm:inline">WALKTHROUGH</span>
+              <span className="inline sm:hidden">WALK</span>
             </button>
           </div>
 
           {/* Presentation Mode Toggle */}
           <button
             onClick={() => setIsPresentationMode(!isPresentationMode)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold border transition-all flex items-center space-x-1.5 ${isPresentationMode
+            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-mono font-semibold border transition-all flex items-center space-x-1 ${isPresentationMode
               ? 'bg-amber-950/80 border-amber-500/50 text-amber-300'
               : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
               }`}
             title="Toggle Photorealistic Presentation Mode"
           >
-            <Eye className="w-3.5 h-3.5" />
-            <span>{isPresentationMode ? 'REALISTIC VIEW' : 'DESIGN GRID'}</span>
+            <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span className="hidden sm:inline">{isPresentationMode ? 'REALISTIC VIEW' : 'DESIGN GRID'}</span>
           </button>
 
           {/* New Plan Button */}
           <button
             onClick={handleNewPlanClick}
-            className="px-3 py-1.5 rounded-lg font-mono text-xs font-bold flex items-center space-x-1.5 bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-gray-200"
+            className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg font-mono text-[10px] sm:text-xs font-bold flex items-center space-x-1 bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-gray-200"
             title="Start a new clean floor plan"
           >
-            <FilePlus className="w-3.5 h-3.5 text-blue-400" />
-            <span>NEW PLAN</span>
+            <FilePlus className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-400" />
+            <span className="hidden sm:inline">NEW PLAN</span>
           </button>
 
           {/* Load Plan Button */}
           <button
             onClick={() => setIsLoadModalOpen(true)}
-            className="px-3 py-1.5 rounded-lg font-mono text-xs font-bold flex items-center space-x-1.5 bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-gray-200"
+            className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg font-mono text-[10px] sm:text-xs font-bold flex items-center space-x-1 bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-gray-200"
             title="Load previously saved floor plans"
           >
-            <FolderOpen className="w-3.5 h-3.5 text-[#E9D3A4]" />
-            <span>LOAD PLAN</span>
+            <FolderOpen className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#E9D3A4]" />
+            <span className="hidden sm:inline">LOAD</span>
           </button>
 
           {/* Save Layout Button */}
           <button
             onClick={() => handleSaveLayout()}
             disabled={isSaving}
-            className="px-4 py-1.5 rounded-lg font-mono text-xs font-bold flex items-center space-x-2 bg-gradient-to-r from-[#E9D3A4] to-[#C29B72] text-black hover:opacity-90 transition-all shadow-md active:scale-95 disabled:opacity-50"
+            className="px-3 py-1 sm:px-4 sm:py-1.5 rounded-lg font-mono text-[10px] sm:text-xs font-bold flex items-center space-x-1.5 bg-gradient-to-r from-[#E9D3A4] to-[#C29B72] text-black hover:opacity-90 transition-all shadow-md active:scale-95 disabled:opacity-50"
           >
-            <Save className="w-3.5 h-3.5" />
-            <span>{isSaving ? 'SAVING...' : 'SAVE PLAN'}</span>
+            <Save className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span>{isSaving ? 'SAVING...' : 'SAVE'}</span>
           </button>
 
           {saveSuccessMsg && (
-            <span className="text-[11px] font-mono text-emerald-400 font-semibold bg-emerald-950/60 border border-emerald-500/40 px-2.5 py-1 rounded-lg animate-fade-in">
+            <span className="text-[10px] sm:text-[11px] font-mono text-emerald-400 font-semibold bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg animate-fade-in">
               {saveSuccessMsg}
             </span>
           )}
 
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/10 ml-2">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-1.5 sm:p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/10 ml-1">
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </header>
 
       {/* 2. Main 3-Column Studio Layout */}
-      <div className="flex-1 w-full h-full bg-[#0F1319] flex overflow-hidden">
+      <div className="flex-1 w-full h-full bg-[#0F1319] flex overflow-hidden relative">
 
         {/* LEFT COLUMN: Asset Library & Room Customization Drawer */}
-        <aside className="w-80 bg-[#161B22]/95 border-r border-white/10 flex flex-col z-10">
+        <aside className={`lg:w-80 w-full max-w-[320px] bg-[#161B22]/98 border-r border-white/10 flex flex-col z-30 transition-all ${
+          activeMobileDrawer === 'library' ? 'fixed inset-y-14 left-0 bottom-14 shadow-2xl' : 'hidden lg:flex'
+        }`}>
+          {/* Mobile Drawer Close Header */}
+          <div className="lg:hidden p-3 bg-black/60 border-b border-white/10 flex items-center justify-between font-mono text-xs text-white">
+            <span className="font-bold text-[#E9D3A4] flex items-center space-x-1.5">
+              <Box className="w-4 h-4" />
+              <span>3D ASSETS LIBRARY</span>
+            </span>
+            <button onClick={() => setActiveMobileDrawer(null)} className="p-1 text-gray-400 hover:text-white">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
           {/* Sub-Navigation Tabs */}
           <div className="grid grid-cols-3 border-b border-white/10 bg-black/40 text-xs font-mono font-bold">
@@ -702,10 +716,55 @@ export const RoomPlannerPreview = ({ product, isOpen, onClose, initialMarketplac
               </span>
             </div>
           </div>
+
+          {/* Mobile Bottom Navigation Bar */}
+          <div className="lg:hidden absolute bottom-3 left-1/2 -translate-x-1/2 z-40 bg-[#161B22]/90 backdrop-blur-md border border-white/10 p-1.5 rounded-2xl flex items-center space-x-1.5 text-[11px] font-mono font-bold shadow-2xl max-w-[calc(100vw-1rem)]">
+            <button
+              onClick={() => setActiveMobileDrawer(activeMobileDrawer === 'library' ? null : 'library')}
+              className={`px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1 ${
+                activeMobileDrawer === 'library' ? 'bg-[#E9D3A4] text-black shadow' : 'text-gray-300 hover:text-white bg-white/5'
+              }`}
+            >
+              <Box className="w-3.5 h-3.5" />
+              <span>ASSETS</span>
+            </button>
+
+            <button
+              onClick={() => setActiveMobileDrawer(null)}
+              className={`px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1 ${
+                activeMobileDrawer === null ? 'bg-[#E9D3A4] text-black shadow' : 'text-gray-300 hover:text-white bg-white/5'
+              }`}
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>CANVAS</span>
+            </button>
+
+            <button
+              onClick={() => setActiveMobileDrawer(activeMobileDrawer === 'settings' ? null : 'settings')}
+              className={`px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1 ${
+                activeMobileDrawer === 'settings' ? 'bg-[#E9D3A4] text-black shadow' : 'text-gray-300 hover:text-white bg-white/5'
+              }`}
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              <span>SETTINGS</span>
+            </button>
+          </div>
         </main>
 
         {/* RIGHT COLUMN: Room Controls & Spatial Analytics Panel */}
-        <aside className="w-80 bg-[#161B22]/95 border-l border-white/10 flex flex-col z-10 overflow-y-auto custom-scrollbar p-4 space-y-4">
+        <aside className={`lg:w-80 w-full max-w-[320px] bg-[#161B22]/98 border-l border-white/10 flex flex-col z-30 overflow-y-auto custom-scrollbar p-4 space-y-4 transition-all ${
+          activeMobileDrawer === 'settings' ? 'fixed inset-y-14 right-0 bottom-14 shadow-2xl' : 'hidden lg:flex'
+        }`}>
+          {/* Mobile Drawer Close Header */}
+          <div className="lg:hidden p-3 bg-black/60 border-b border-white/10 flex items-center justify-between font-mono text-xs text-white -mx-4 -mt-4 mb-2">
+            <span className="font-bold text-[#E9D3A4] flex items-center space-x-1.5">
+              <Sliders className="w-4 h-4" />
+              <span>ROOM SETTINGS</span>
+            </span>
+            <button onClick={() => setActiveMobileDrawer(null)} className="p-1 text-gray-400 hover:text-white">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
           {/* Room Scale & Architectural Dimensions Sliders */}
           <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">

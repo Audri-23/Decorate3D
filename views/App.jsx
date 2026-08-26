@@ -17,6 +17,8 @@ import { SellerEscrowPanel } from './features/f14-escrow-holding/SellerEscrowPan
 import { CourierDispatchBoard } from './features/f11-courier-dispatch/CourierDispatchBoard.jsx';
 import { LiveTrackingMap } from './features/f12-live-tracking/LiveTrackingMap.jsx';
 import { DisputeDashboard } from './features/f16-disputes/DisputeDashboard.jsx';
+import { WebXRARModal } from '../features/f7-f8-ar-visualizer/WebXRARModal.jsx';
+import { ARFitValidationModal } from '../features/f7-f8-ar-visualizer/ARFitValidationModal.jsx';
 
 import { seedProductsData } from '../models/seedData.js';
 import { Box, ShieldCheck, MapPin, Truck, Grid, Lock, CheckCircle, Trash2 } from 'lucide-react';
@@ -30,6 +32,8 @@ export default function App() {
   // Modals & Drawers
   const [is3DInspectorOpen, setIs3DInspectorOpen] = useState(false);
   const [isRoomPlannerOpen, setIsRoomPlannerOpen] = useState(false);
+  const [isARModalOpen, setIsARModalOpen] = useState(false);
+  const [isFitModalOpen, setIsFitModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSellerListingOpen, setIsSellerListingOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -51,56 +55,82 @@ export default function App() {
     setNotification({ type, title, message });
   };
 
-  // URL Path Synchronization & Role Route Parser (/buyer, /seller, /courier, /admin)
+  // URL Path & Tab Route Mapper
+  const TAB_URL_MAP = {
+    marketplace: '/',
+    room_planner: '/room-planner',
+    geo_map: '/map-search',
+    seller_dashboard: '/seller',
+    logistics: '/courier',
+    admin_dashboard: '/admin',
+    escrow_vault: '/escrow-vault',
+    seller_escrow: '/seller-escrow',
+    profile: '/profile'
+  };
+
+  const getTabFromPath = (pathStr) => {
+    const p = (pathStr || '/').toLowerCase();
+    if (p.includes('/seller-escrow')) return 'seller_escrow';
+    if (p.includes('/seller')) return 'seller_dashboard';
+    if (p.includes('/courier')) return 'logistics';
+    if (p.includes('/admin')) return 'admin_dashboard';
+    if (p.includes('/room-planner')) return 'room_planner';
+    if (p.includes('/map-search') || p.includes('/geo')) return 'geo_map';
+    if (p.includes('/escrow-vault')) return 'escrow_vault';
+    if (p.includes('/profile')) return 'profile';
+    if (p.includes('/product/')) return 'product_detail';
+    return 'marketplace';
+  };
+
+  const changeTab = (newTab, productToSet = null, pushToHistory = true) => {
+    setActiveTab(newTab);
+    if (productToSet) {
+      setSelectedProduct(productToSet);
+    }
+
+    if (pushToHistory) {
+      let targetUrl = TAB_URL_MAP[newTab] || '/';
+      if (newTab === 'product_detail' && (productToSet?._id || selectedProduct?._id)) {
+        const idToUse = productToSet?._id || selectedProduct?._id;
+        targetUrl = `/product/${idToUse}`;
+      }
+      if (window.location.pathname !== targetUrl) {
+        window.history.pushState({ tab: newTab, productId: productToSet?._id }, '', targetUrl);
+      }
+    }
+  };
+
+  // URL Path Synchronization & Browser History (Back/Forward Popstate Listener)
   useEffect(() => {
     const syncRouteFromPath = () => {
-      const path = window.location.pathname.toLowerCase();
-      let targetRole = 'buyer';
+      const path = window.location.pathname;
+      const targetTab = getTabFromPath(path);
 
-      if (path.includes('/seller')) {
-        targetRole = 'seller';
-      } else if (path.includes('/courier')) {
-        targetRole = 'courier';
-      } else if (path.includes('/admin')) {
-        targetRole = 'admin';
-      } else {
-        targetRole = 'buyer';
+      if (path.includes('/product/')) {
+        const prodId = path.split('/product/')[1];
+        if (prodId && products && products.length > 0) {
+          const found = products.find(p => String(p._id) === String(prodId));
+          if (found) setSelectedProduct(found);
+        }
       }
 
-      // Check stored user session vs target URL role
-      const savedUserStr = localStorage.getItem('decorate3d_user');
-      const currentUser = savedUserStr ? JSON.parse(savedUserStr) : null;
-
-      if (currentUser && currentUser.role !== targetRole) {
-        setUser(null);
-        localStorage.removeItem('decorate3d_user');
-        setNotification({
-          type: 'info',
-          title: 'Role Route Switched via URL',
-          message: `Switched web address to /${targetRole}. Active ${currentUser.role.toUpperCase()} session has been logged out.`
-        });
-        setIsAuthModalOpen(true);
-      } else if (!currentUser && targetRole !== 'buyer') {
-        setIsAuthModalOpen(true);
+      if (targetTab === 'seller_dashboard') {
+        setActiveRoleRoute('seller');
+      } else if (targetTab === 'logistics') {
+        setActiveRoleRoute('courier');
+      } else if (targetTab === 'admin_dashboard') {
+        setActiveRoleRoute('admin');
+      } else if (targetTab === 'marketplace') {
+        setActiveRoleRoute('buyer');
       }
 
-      if (targetRole === 'seller') {
-        setActiveTab('seller_dashboard');
-      } else if (targetRole === 'courier') {
-        setActiveTab('logistics');
-      } else if (targetRole === 'admin') {
-        setActiveTab('admin_dashboard');
-      } else {
-        setActiveTab(prev => (prev === 'seller_dashboard' || prev === 'admin_dashboard' || prev === 'logistics' ? 'marketplace' : prev));
-      }
-
-      setActiveRoleRoute(targetRole);
+      setActiveTab(targetTab);
     };
 
     syncRouteFromPath();
     window.addEventListener('popstate', syncRouteFromPath);
     return () => window.removeEventListener('popstate', syncRouteFromPath);
-  }, []);
+  }, [products]);
 
   // Persist user session
   useEffect(() => {
@@ -111,16 +141,46 @@ export default function App() {
     }
   }, [user]);
 
-  // Fetch real backend products
+  // Fetch real backend products & sync persistent local custom products
   const fetchProducts = () => {
     fetch('/api/products')
       .then(res => res.json())
       .then(data => {
-        if (data.success && data.data && data.data.length > 0) {
-          setProducts(data.data);
-        }
+        let apiProds = (data.success && data.data && data.data.length > 0) ? data.data : seedProductsData;
+        setProducts(prev => {
+          const existingIds = new Set(apiProds.map(p => String(p._id)));
+          const savedCustomProds = localStorage.getItem('decorate3d_custom_products');
+          let customList = [];
+          if (savedCustomProds) {
+            try { customList = JSON.parse(savedCustomProds) || []; } catch(e){}
+          }
+          const stateCustom = (prev || []).filter(p => !seedProductsData.some(sp => String(sp._id) === String(p._id)));
+          const allCustom = [...stateCustom, ...customList];
+          const uniqueCustom = allCustom.filter((cp, idx, self) =>
+            !existingIds.has(String(cp._id)) && self.findIndex(t => String(t._id) === String(cp._id)) === idx
+          );
+          return [...uniqueCustom, ...apiProds];
+        });
       })
-      .catch(() => {});
+      .catch(() => {
+        const savedCustomProds = localStorage.getItem('decorate3d_custom_products');
+        if (savedCustomProds) {
+          try {
+            const customList = JSON.parse(savedCustomProds);
+            if (Array.isArray(customList) && customList.length > 0) {
+              setProducts(prev => {
+                const existingIds = new Set(seedProductsData.map(p => String(p._id)));
+                const stateCustom = (prev || []).filter(p => !existingIds.has(String(p._id)));
+                const allCustom = [...stateCustom, ...customList];
+                const uniqueCustom = allCustom.filter((cp, idx, self) =>
+                  !existingIds.has(String(cp._id)) && self.findIndex(t => String(t._id) === String(cp._id)) === idx
+                );
+                return [...uniqueCustom, ...seedProductsData];
+              });
+            }
+          } catch (e) {}
+        }
+      });
   };
 
   useEffect(() => {
@@ -136,6 +196,28 @@ export default function App() {
 
   const close3DInspector = () => {
     setIs3DInspectorOpen(false);
+  };
+
+  const openARCamera = (productToView = null) => {
+    if (productToView) {
+      setSelectedProduct(productToView);
+    }
+    setIsARModalOpen(true);
+  };
+
+  const closeARCamera = () => {
+    setIsARModalOpen(false);
+  };
+
+  const openFitValidation = (productToView = null) => {
+    if (productToView) {
+      setSelectedProduct(productToView);
+    }
+    setIsFitModalOpen(true);
+  };
+
+  const closeFitValidation = () => {
+    setIsFitModalOpen(false);
   };
 
   const openRoomPlanner = () => {
@@ -235,7 +317,7 @@ export default function App() {
       {/* Navbar */}
       <Navbar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={(tab) => changeTab(tab)}
         cartCount={cart.length}
         openAuthModal={() => setIsAuthModalOpen(true)}
         user={user}
@@ -250,8 +332,7 @@ export default function App() {
           <MarketplacePage
             products={products}
             onSelectProduct={(p) => {
-              setSelectedProduct(p);
-              setActiveTab('product_detail');
+              changeTab('product_detail', p);
             }}
             open3DInspector={open3DInspector}
           />
@@ -263,6 +344,8 @@ export default function App() {
             open3DInspector={open3DInspector}
             onAddToCart={handleAddToCart}
             onLaunchRoomPlanner={openRoomPlanner}
+            onOpenARCamera={openARCamera}
+            onOpenFitValidation={openFitValidation}
           />
         )}
 
@@ -365,33 +448,11 @@ export default function App() {
 
         {/* COURIER / DRIVER DASHBOARD VIEW (/courier) */}
         {activeTab === 'logistics' && (
-          <div className="space-y-0 animate-fadeIn">
-            {/* Existing header banner */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-2">
-              <div className="bg-[#1E232A] text-white rounded-3xl p-8 border border-[#A17A16]/30 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
-                <div>
-                  <span className="gold-badge text-xs px-3 py-1 rounded-full uppercase">COURIER PORTAL (/courier)</span>
-                  <h1 className="font-serif text-3xl font-bold mt-2">Logistics &amp; Geo-Radius Bidding Hub</h1>
-                  <p className="text-sm text-gray-300 mt-1 max-w-xl">
-                    Connect local courier drivers, calculate distance matrix quotes, and verify delivery with OTP handshake codes.
-                  </p>
-                </div>
-                <button
-                  onClick={() => showCenteredNotification('info', 'Courier Bid Placed', 'Submitted $45 delivery bid for local Dhaka zone dispatch.')}
-                  className="gold-gradient-btn px-6 py-3.5 rounded-xl font-bold text-sm shadow-xl flex items-center space-x-2 whitespace-nowrap"
-                >
-                  <Truck className="w-5 h-5" />
-                  <span>BID ON OPEN DELIVERIES</span>
-                </button>
-              </div>
-            </div>
-            {/* F11 — Courier Dispatch Board (Injamamul Haque Fahim) */}
-            <CourierDispatchBoard
-              user={user}
-              onNotify={showCenteredNotification}
-              onTrackJob={(job) => setTrackingJob(job)}
-            />
-          </div>
+          <CourierDispatchBoard
+            user={user}
+            onNotify={showCenteredNotification}
+            onTrackJob={(job) => setTrackingJob(job)}
+          />
         )}
 
         {/* ADMIN DASHBOARD VIEW (/admin) */}
@@ -461,12 +522,12 @@ export default function App() {
 
         {/* Escrow Vault & Holding Tracker — Buyer side */}
         {activeTab === 'escrow_vault' && (
-          <EscrowVaultPage user={user} />
+          <EscrowVaultPage user={user} onTrackJob={(job) => setTrackingJob(job)} />
         )}
 
         {/* Seller Escrow Release Panel — Seller enters buyer OTP to unlock funds */}
         {activeTab === 'seller_escrow' && (
-          <SellerEscrowPanel user={user} />
+          <SellerEscrowPanel user={user} onTrackJob={(job) => setTrackingJob(job)} />
         )}
 
         {/* Admin Disputes — F16 Dispute & Mediation Dashboard */}
@@ -481,7 +542,32 @@ export default function App() {
         isOpen={is3DInspectorOpen}
         onClose={close3DInspector}
         onAddToCart={handleAddToCart}
-        onLaunchAR={openRoomPlanner}
+        onLaunchAR={() => {
+          close3DInspector();
+          openARCamera(selectedProduct);
+        }}
+      />
+
+      {/* Module 3 Feature 3 (F7) — WebXR AR Camera Overlay Visualizer */}
+      <WebXRARModal
+        product={selectedProduct}
+        isOpen={isARModalOpen}
+        onClose={closeARCamera}
+        onOpenFitValidation={(p) => {
+          closeARCamera();
+          openFitValidation(p);
+        }}
+      />
+
+      {/* Module 3 Feature 4 (F8) — AR Measurement Fit Validation Tool */}
+      <ARFitValidationModal
+        product={selectedProduct}
+        isOpen={isFitModalOpen}
+        onClose={closeFitValidation}
+        onLaunchAROverlay={(p) => {
+          closeFitValidation();
+          openARCamera(p);
+        }}
       />
 
       {/* Room Planner Modal */}
@@ -499,6 +585,19 @@ export default function App() {
         onClose={() => setIsAuthModalOpen(false)}
         onLoginSuccess={(authenticatedUser) => {
           setUser(authenticatedUser);
+          if (authenticatedUser.role === 'courier') {
+            setActiveTab('logistics');
+            setActiveRoleRoute('courier');
+            window.history.pushState(null, '', '/courier');
+          } else if (authenticatedUser.role === 'seller') {
+            setActiveTab('seller_dashboard');
+            setActiveRoleRoute('seller');
+            window.history.pushState(null, '', '/seller');
+          } else if (authenticatedUser.role === 'admin') {
+            setActiveTab('admin_dashboard');
+            setActiveRoleRoute('admin');
+            window.history.pushState(null, '', '/admin');
+          }
           showCenteredNotification(
             'success',
             'Authentication Complete',
@@ -538,16 +637,16 @@ export default function App() {
         user={user}
         isOpen={isSellerListingOpen}
         onClose={() => setIsSellerListingOpen(false)}
+        onNavigateToMarketplace={() => changeTab('marketplace')}
         onAddProduct={(newProd) => {
+          try {
+            const existingCustom = localStorage.getItem('decorate3d_custom_products');
+            let list = existingCustom ? JSON.parse(existingCustom) : [];
+            list = [newProd, ...list.filter(p => String(p._id) !== String(newProd._id))];
+            localStorage.setItem('decorate3d_custom_products', JSON.stringify(list));
+          } catch (e) {}
           setProducts(prev => [newProd, ...prev]);
           setSelectedProduct(newProd);
-          fetchProducts();
-          showCenteredNotification(
-            'success',
-            '3D Model Generated & Item Published',
-            `"${newProd.title}" multi-angle photos converted to 3D spatial mesh texture map!`
-          );
-          open3DInspector(newProd);
         }}
       />
 

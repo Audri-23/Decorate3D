@@ -18,7 +18,7 @@ export async function fetchDispatchJobs(filters = {}) {
 }
 
 /**
- * Place a bid on a dispatch job.
+ * Place a bid on a dispatch job. Requires courier JWT.
  */
 export async function placeBidOnJob(jobId, { courierId, courierName, bidAmountBDT, note }) {
   const res = await fetch(`${BASE}/${jobId}/bid`, {
@@ -30,7 +30,7 @@ export async function placeBidOnJob(jobId, { courierId, courierName, bidAmountBD
 }
 
 /**
- * Lock / accept a dispatch job.
+ * Lock / accept a dispatch job. Requires courier JWT.
  */
 export async function lockDispatchJob(jobId, { courierId, courierName }) {
   const res = await fetch(`${BASE}/${jobId}/lock`, {
@@ -42,7 +42,7 @@ export async function lockDispatchJob(jobId, { courierId, courierName }) {
 }
 
 /**
- * Mark a job as completed.
+ * Mark a job as completed. Requires courier JWT.
  */
 export async function completeDispatchJob(jobId, { courierId }) {
   const res = await fetch(`${BASE}/${jobId}/complete`, {
@@ -54,7 +54,7 @@ export async function completeDispatchJob(jobId, { courierId }) {
 }
 
 /**
- * Create a new dispatch job (admin/seller action).
+ * Create a new dispatch job (seller/admin action). Requires auth JWT.
  */
 export async function createDispatchJob(payload) {
   const res = await fetch(BASE, {

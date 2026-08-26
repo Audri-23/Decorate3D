@@ -10,6 +10,8 @@ const productSchema = new mongoose.Schema({
   isRareFind: { type: Boolean, default: true },
   description: { type: String, required: true },
   material: { type: String, default: 'Top-Grain Leather & Walnut Wood' },
+  color: { type: String, default: '' },
+  embedding: { type: [Number], default: [] },
   era: { type: String, default: 'Mid-Century Modern (1960s)' },
   dimensions: {
     width: { type: String, default: '32 in' },

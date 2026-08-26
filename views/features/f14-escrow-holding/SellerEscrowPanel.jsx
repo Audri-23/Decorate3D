@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Lock, CheckCircle, AlertCircle, RefreshCw, Building2, UserCheck, KeyRound, AlertOctagon, FileText } from 'lucide-react';
+import { ShieldCheck, Lock, CheckCircle, AlertCircle, RefreshCw, Building2, UserCheck, KeyRound, AlertOctagon, FileText, Radio } from 'lucide-react';
 import { RaiseDisputeModal } from '../f16-disputes/RaiseDisputeModal.jsx';
 import { DisputeStatusBadge } from '../f16-disputes/DisputeStatusBadge.jsx';
 
-export function SellerEscrowPanel({ user }) {
+// This is the SELLER side of the Escrow system.
+// The seller can see all orders locked in escrow.
+// To unlock the funds, the seller asks the buyer for the OTP at the time of physical delivery.
+// The seller enters that OTP here, and the escrow is released.
+
+export function SellerEscrowPanel({ user, onTrackJob }) {
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -229,7 +234,26 @@ export function SellerEscrowPanel({ user }) {
             </div>
 
             {/* OTP Section at the bottom */}
-            <div className="p-5 border-t border-[#E5DEC9]">
+            <div className="p-5 border-t border-[#E5DEC9] space-y-4">
+              {/* Live Courier Tracking button for Seller */}
+              <button
+                onClick={() => onTrackJob?.({
+                  _id: order.jobId || 'job_dispatch_004',
+                  productTitle: order.productTitle,
+                  productImage: order.productImage || '',
+                  pickupAddress: 'Dhanmondi Rd 27, Dhaka',
+                  pickupLat: 23.7509,
+                  pickupLng: 90.3754,
+                  dropoffAddress: 'Gulshan 2 Circle, Dhaka',
+                  dropoffLat: 23.7925,
+                  dropoffLng: 90.4078
+                })}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#1E232A] hover:bg-[#2d3540] text-white text-xs font-bold rounded-xl border border-[#A17A16]/40 hover:border-[#C9980A] transition-all group shadow-sm"
+              >
+                <Radio className="w-3.5 h-3.5 text-[#C9980A] group-hover:animate-pulse" />
+                <span>TRACK LIVE COURIER LOCATION</span>
+                <span className="ml-1 w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              </button>
 
               {/* Already released or split resolved — show success banner & invoice link */}
               {(isAlreadyReleased || isSuccess || order.escrowStatus === 'SPLIT_RESOLVED') ? (

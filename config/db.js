@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import dns from 'dns';
 
 dotenv.config();
 
@@ -7,8 +8,11 @@ export const connectDB = async () => {
   const connStr = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/decorate3d';
 
   try {
+    // Enable fallback DNS for Windows Node SRV resolution (Google / Cloudflare DNS)
+    try { dns.setServers(['8.8.8.8', '1.1.1.1']); } catch (e) {}
+
     await mongoose.connect(connStr, {
-      serverSelectionTimeoutMS: 3000,
+      serverSelectionTimeoutMS: 5000,
     });
     console.log(`[Database] MongoDB Connected to ${mongoose.connection.host}`);
     return true;

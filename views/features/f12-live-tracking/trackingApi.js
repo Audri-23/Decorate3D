@@ -1,5 +1,16 @@
 const BASE = '/api/tracking';
 
+function getAuthHeaders() {
+  const userStr = localStorage.getItem('decorate3d_user');
+  if (!userStr) return {};
+  try {
+    const user = JSON.parse(userStr);
+    return user.token ? { Authorization: `Bearer ${user.token}` } : {};
+  } catch {
+    return {};
+  }
+}
+
 /** Start (or restart) a tracking session for a locked dispatch job. */
 export async function startTrackingSession(jobId) {
   const res = await fetch(`${BASE}/${jobId}/start`, {
@@ -19,7 +30,7 @@ export async function pollTrackingState(jobId) {
 export async function updateCourierGPS(jobId, { lat, lng, courierId }) {
   const res = await fetch(`${BASE}/${jobId}/location`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify({ lat, lng, courierId })
   });
   return res.json();

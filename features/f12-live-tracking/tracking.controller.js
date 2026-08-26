@@ -15,8 +15,8 @@ async function fetchOSRMRoute(fromLat, fromLng, toLat, toLng) {
     `?overview=full&geometries=geojson&alternatives=false`;
 
   try {
-    // 3s timeout — fail fast so the fallback route kicks in immediately
-    const resp = await fetch(url, { signal: AbortSignal.timeout(3000) });
+    // 1.2s timeout — fail fast so fallback route kicks in instantly
+    const resp = await fetch(url, { signal: AbortSignal.timeout(1200) });
     const json = await resp.json();
 
     if (json.code === 'Ok' && json.routes?.length > 0) {

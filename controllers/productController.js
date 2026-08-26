@@ -1,24 +1,95 @@
+import fs from 'fs';
+import path from 'path';
 import { seedProductsData } from '../models/seedData.js';
 import { ProductModel } from '../models/ProductModel.js';
+import { getEmbedding } from '../features/f4-style-search/styleSearch.controller.js';
+import { getGeminiApiKey } from '../config/gemini.js';
+
+async function fetchImageBuffer(imageInput) {
+  if (imageInput.startsWith('/uploads/') || imageInput.startsWith('uploads/')) {
+    const cleanPath = imageInput.startsWith('/') ? imageInput.slice(1) : imageInput;
+    const absPath = path.join(process.cwd(), cleanPath);
+    if (fs.existsSync(absPath)) {
+      return { buffer: fs.readFileSync(absPath), mimeType: path.extname(cleanPath) === '.png' ? 'image/png' : 'image/jpeg' };
+    }
+  } else if (imageInput.startsWith('http://') || imageInput.startsWith('https://')) {
+    const response = await fetch(imageInput, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+    if (response.ok) {
+      return { buffer: Buffer.from(await response.arrayBuffer()), mimeType: response.headers.get('content-type') || 'image/jpeg' };
+    }
+  } else if (imageInput.startsWith('data:')) {
+    const match = imageInput.match(/^data:([^;]+);base64,(.*)$/);
+    if (match) {
+      return { buffer: Buffer.from(match[2], 'base64'), mimeType: match[1] };
+    }
+  }
+  return { buffer: Buffer.from(imageInput, 'base64'), mimeType: 'image/jpeg' };
+}
+
+async function describeImage(imageBuffer, mimeType, apiKey) {
+  const prompt = `
+Analyze the uploaded image of a furniture item and describe its style features in detail.
+Specify the item type, design style, shape, details, material texturing, and primary colors.
+Be extremely descriptive and detailed (e.g. 'A tan-brown leather lounge armchair with walnut wood outer shell and metal base, mid-century modern style').
+Return ONLY the raw descriptive sentence. Do not include introductory text or formatting.
+`;
+
+  const payload = {
+    contents: [
+      {
+        parts: [
+          { text: prompt },
+          {
+            inline_data: {
+              mime_type: mimeType,
+              data: imageBuffer.toString('base64')
+            }
+          }
+        ]
+      }
+    ],
+    generationConfig: {
+      temperature: 0.2
+    }
+  };
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    throw new Error(`Gemini Image Description failed: ${res.status}`);
+  }
+
+  const data = await res.json();
+  const description = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!description) {
+    throw new Error('Failed to generate image description.');
+  }
+  return description.trim();
+}
 
 export const getProducts = async (req, res) => {
   try {
     const { category, condition, search } = req.query;
     let products = [];
-
-    // Check if database connection is live, otherwise use in-memory seed dataset
     try {
-      products = await ProductModel.find().lean();
-      if (!products || products.length === 0) {
+      const dbProducts = await ProductModel.find().sort({ createdAt: -1 }).lean();
+      const dbIds = new Set((dbProducts || []).map(p => String(p._id)));
+
+      // Combine dbProducts at the top (newest first) + seedProductsData items not in DB
+      const extraSeed = seedProductsData.filter(p => !dbIds.has(String(p._id)));
+      products = [...(dbProducts || []), ...extraSeed];
+
+      if (products.length === 0) {
         products = [...seedProductsData];
-      } else {
-        // Merge any in-memory products created during session that aren't in DB yet
-        const dbIds = new Set(products.map(p => p._id ? p._id.toString() : ''));
-        seedProductsData.forEach(p => {
-          if (p._id && !dbIds.has(p._id.toString())) {
-            products.unshift(p);
-          }
-        });
       }
     } catch {
       products = [...seedProductsData];
@@ -116,6 +187,14 @@ export const createProduct = async (req, res) => {
   try {
     const productData = { ...req.body };
 
+    // Normalize conditionGrade to valid MongoDB enum ('FAIR', 'GOOD', 'EXCELLENT')
+    const validGrades = ['FAIR', 'GOOD', 'EXCELLENT'];
+    if (!validGrades.includes(String(productData.conditionGrade || '').toUpperCase())) {
+      productData.conditionGrade = 'GOOD';
+    } else {
+      productData.conditionGrade = String(productData.conditionGrade).toUpperCase();
+    }
+
     // Strip custom string _id if it's not a valid 24-char hex ObjectId
     if (productData._id && typeof productData._id === 'string' && !productData._id.match(/^[0-9a-fA-F]{24}$/)) {
       delete productData._id;
@@ -143,7 +222,26 @@ export const createProduct = async (req, res) => {
       seedProductsData.unshift(newProduct);
     }
 
-    return res.status(201).json({ success: true, data: newProduct });
+    // Return response immediately to client so listing creation finishes in milliseconds
+    res.status(201).json({ success: true, data: newProduct });
+
+    // Generate embedding vector asynchronously in background (non-blocking)
+    const primaryImage = productData.images?.[0] || productData.primaryImage || '';
+    const apiKey = getGeminiApiKey();
+    if (primaryImage && apiKey && !apiKey.includes('YOUR_GEMINI_API_KEY_HERE')) {
+      (async () => {
+        try {
+          const { buffer, mimeType } = await fetchImageBuffer(primaryImage);
+          const description = await describeImage(buffer, mimeType, apiKey);
+          const vector = await getEmbedding(description, apiKey);
+          if (newProduct._id && ProductModel.findByIdAndUpdate) {
+            await ProductModel.findByIdAndUpdate(newProduct._id, { embedding: vector });
+          }
+        } catch (embErr) {
+          console.warn('[Product Creation Warning] Non-blocking embedding generation skipped:', embErr.message);
+        }
+      })();
+    }
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -180,13 +278,17 @@ export const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // 1. Delete from database
     try {
       await ProductModel.findByIdAndDelete(id);
-    } catch {
-      const index = seedProductsData.findIndex(p => p._id === id);
-      if (index !== -1) {
-        seedProductsData.splice(index, 1);
-      }
+    } catch (dbErr) {
+      console.warn('[Delete Product Warning] DB delete failed:', dbErr.message);
+    }
+
+    // 2. ALWAYS remove from in-memory seedProductsData array so it is never re-merged
+    const index = seedProductsData.findIndex(p => p._id === id || (p._id && p._id.toString() === id));
+    if (index !== -1) {
+      seedProductsData.splice(index, 1);
     }
 
     return res.status(200).json({ success: true, message: 'Product deleted successfully' });

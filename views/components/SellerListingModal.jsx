@@ -1,19 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Camera, Upload, CheckCircle, Sparkles, Box, ShieldCheck, RefreshCw, Layers, AlertCircle, FileCode } from 'lucide-react';
+import { X, Camera, Upload, CheckCircle, Sparkles, Box, ShieldCheck, RefreshCw, Layers, AlertCircle, FileCode, ShoppingBag } from 'lucide-react';
 import { Viewer3DCanvas } from './Viewer3DCanvas.jsx';
 import { DamageAssessorWidget } from '../features/f1-damage-assessment/DamageAssessorWidget.jsx';
 
-export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
+export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user, onNavigateToMarketplace }) => {
   const [activeStep, setActiveStep] = useState('details'); // 'details' or 'multi_angle_capture'
   const [captureMethod, setCaptureMethod] = useState('upload'); // 'upload' or 'camera'
+  const [createdSuccessProduct, setCreatedSuccessProduct] = useState(null);
 
   // Form State
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('Chairs');
-  const [material, setMaterial] = useState('Top-Grain Leather & Solid Wood');
-  const [era, setEra] = useState('Mid-Century Modern');
+  const [material, setMaterial] = useState('');
+  const [color, setColor] = useState('');
+  const [era, setEra] = useState('');
   const [description, setDescription] = useState('');
+  const [isTagging, setIsTagging] = useState(false);
 
   // 3D GLB/GLTF Model File State & Validation
   const [glbFile, setGlbFile] = useState(null);
@@ -94,6 +97,42 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
     return () => clearTimeout(delayDebounceFn);
   }, [originalPrice, itemAge, category, conditionGrade]);
 
+  // AI Auto-Tagging Hook
+  const handleAutoTag = async (frontImageSrc) => {
+    if (!frontImageSrc || frontImageSrc.startsWith('https://images.unsplash.com')) {
+      return;
+    }
+    setIsTagging(true);
+    try {
+      const res = await fetch('/api/modules/m3/attribute-tagging', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageBase64: frontImageSrc,
+          angle: 'front'
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        const { category: taggedCategory, material: taggedMaterial, color: taggedColor, era: taggedEra } = data.data;
+        if (taggedCategory) setCategory(taggedCategory);
+        if (taggedMaterial) setMaterial(taggedMaterial);
+        if (taggedColor) setColor(taggedColor);
+        if (taggedEra) setEra(taggedEra);
+      }
+    } catch (err) {
+      console.warn('Failed to auto-tag attributes:', err);
+    } finally {
+      setIsTagging(false);
+    }
+  };
+
+  useEffect(() => {
+    if (angles.front && !angles.front.startsWith('https://images.unsplash.com')) {
+      handleAutoTag(angles.front);
+    }
+  }, [angles.front]);
+
   if (!isOpen) return null;
 
 
@@ -169,42 +208,119 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
     // Valid file selected
     setGlbFile(file);
     setGlbFileName(file.name);
-    const previewUrl = URL.createObjectURL(file);
-    setGlbPreviewUrl(previewUrl);
+    
+    // 1. Create instant Blob Object URL for 0ms live preview in modal canvas
+    const instantBlobUrl = URL.createObjectURL(file);
+    setGlbPreviewUrl(instantBlobUrl);
+
+    // 2. Read GLB binary file as Base64 Data URL for persistent storage across page reloads
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setGlbPreviewUrl(event.target.result);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   // Handle image file upload selection
+// Compress image data URL to lightweight JPEG (<100KB) to ensure Vercel 4.5MB request limit is never exceeded
+function compressImageDataUrl(dataUrl, maxWidth = 800, quality = 0.7) {
+  return new Promise((resolve) => {
+    if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image')) {
+      resolve(dataUrl);
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
   const handleFileUpload = (e, angleKey) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        setAngles(prev => ({ ...prev, [angleKey]: event.target.result }));
+      reader.onload = async (event) => {
+        const compressed = await compressImageDataUrl(event.target.result);
+        setAngles(prev => ({ ...prev, [angleKey]: compressed }));
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const resetForm = () => {
+    setTitle('');
+    setPrice('');
+    setCategory('Chairs');
+    setMaterial('Top-Grain Leather & Solid Wood');
+    setColor('');
+    setEra('Mid-Century Modern');
+    setDescription('');
+    setOriginalPrice('');
+    setItemAge('');
+    setConditionGrade('GOOD');
+    setGlbFile(null);
+    setGlbPreviewUrl('');
+    setGlbFileName('');
+    setGlbError(null);
+    setCreatedSuccessProduct(null);
+    setAngles({
+      front: 'https://images.unsplash.com/photo-1580481072645-022f9a6d1276?w=800&auto=format&fit=crop&q=80',
+      back: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&auto=format&fit=crop&q=80',
+      left: 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=800&auto=format&fit=crop&q=80',
+      right: 'https://images.unsplash.com/photo-1580481072645-022f9a6d1276?w=800&auto=format&fit=crop&q=80'
+    });
   };
 
   const handleSubmitFinal = async () => {
     setIsProcessing3D(true);
     setProcessingProgress(20);
 
-    let uploadedGlbUrl = '/uploads/models/sample_chair.gltf';
+    let defaultModelUrl = '/models/sample_chair.gltf';
+    const catLower = (category || '').toLowerCase();
+    if (catLower.includes('sofa') || catLower.includes('couch')) {
+      defaultModelUrl = '/models/sample_sofa.gltf';
+    } else if (catLower.includes('table') || catLower.includes('desk')) {
+      defaultModelUrl = '/models/sample_table.gltf';
+    }
+
+    let uploadedGlbUrl = defaultModelUrl;
 
     try {
-      // If a custom GLB file was uploaded, send to backend upload endpoint
+      const compressedFront = await compressImageDataUrl(angles.front);
+      const compressedBack = await compressImageDataUrl(angles.back);
+      const compressedLeft = await compressImageDataUrl(angles.left);
+      const compressedRight = await compressImageDataUrl(angles.right);
+
+      const compressedAngles = {
+        front: compressedFront,
+        back: compressedBack,
+        left: compressedLeft,
+        right: compressedRight
+      };
+
       if (glbFile) {
         setProcessingProgress(40);
-        const formData = new FormData();
-        formData.append('files', glbFile);
-
-        const uploadRes = await fetch('/api/products/upload', {
-          method: 'POST',
-          body: formData
-        });
-        const uploadData = await uploadRes.json();
-        if (uploadData.success && uploadData.data?.model3DUrl) {
-          uploadedGlbUrl = uploadData.data.model3DUrl;
+        if (glbPreviewUrl) {
+          uploadedGlbUrl = glbPreviewUrl;
         }
       }
 
@@ -219,11 +335,12 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
         conditionGrade: conditionGrade,
         isRareFind: true,
         description: description || 'Handcrafted furniture item uploaded with interactive GLB/GLTF 3D model.',
-        material: material,
-        era: era,
+        material: material || 'Solid Wood & Leather',
+        color: color || 'Brown',
+        era: era || 'Mid-Century Modern',
         dimensions: { width: '32 in', depth: '34 in', height: '32 in' },
-        images: [angles.front, angles.back, angles.left, angles.right],
-        multiAngleImages: angles,
+        images: [compressedFront, compressedBack, compressedLeft, compressedRight],
+        multiAngleImages: compressedAngles,
         has3DModel: true,
         model3D: {
           url: uploadedGlbUrl,
@@ -244,7 +361,6 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
         sellerEmail: user?.email || 'seller@decorate3d.com'
       };
 
-      // Post product to backend API
       let finalCreatedProduct = newProduct;
       try {
         const res = await fetch('/api/products', {
@@ -265,9 +381,8 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
       setTimeout(() => {
         setIsProcessing3D(false);
         onAddProduct(finalCreatedProduct);
-        onClose();
-        resetForm();
-      }, 500);
+        setCreatedSuccessProduct(finalCreatedProduct);
+      }, 400);
 
     } catch (err) {
       console.error('Submission error:', err);
@@ -281,27 +396,76 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
         
         {/* Close Button */}
         <button
-          onClick={() => { stopCamera(); onClose(); }}
-          className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-800 rounded-full hover:bg-gray-100 transition-colors"
+          onClick={() => { stopCamera(); onClose(); resetForm(); }}
+          className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-800 rounded-full hover:bg-gray-100 transition-colors z-10"
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* Modal Header */}
-        <div className="text-center mb-6">
-          <div className="w-12 h-12 rounded-full bg-[#1E232A] text-[#A17A16] flex items-center justify-center mx-auto mb-2 border-2 border-[#A17A16]">
-            <Box className="w-6 h-6" />
-          </div>
-          <h2 className="font-serif text-2xl font-bold text-gray-900">
-            List Furniture Item with 3D Scanner
-          </h2>
-          <p className="text-xs text-gray-500 mt-1">
-            Capture or Upload 4 Angles (Front, Back, Left Side, Right Side) to Generate interactive 360° 3D Model
-          </p>
-        </div>
+        {/* SUCCESS CONFIRMATION CARD */}
+        {createdSuccessProduct ? (
+          <div className="py-8 px-4 text-center space-y-6 animate-fadeIn">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto border-2 border-emerald-500 shadow-lg">
+              <CheckCircle className="w-10 h-10" />
+            </div>
 
-        {/* Processing Spinner Overlay */}
-        {isProcessing3D && (
+            <div>
+              <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3.5 py-1 rounded-full uppercase border border-emerald-300 inline-block mb-2">
+                ✓ Furniture Listing Published Live
+              </span>
+              <h3 className="font-serif text-2xl font-bold text-gray-900">
+                "{createdSuccessProduct.title}"
+              </h3>
+              <p className="text-xs text-gray-600 mt-1 max-w-md mx-auto">
+                Your item and interactive 3D model have been successfully created and are active live on the Decorate3D Marketplace!
+              </p>
+            </div>
+
+            {/* Product Preview Card */}
+            <div className="bg-white p-4 rounded-2xl border border-[#E5DEC9] shadow-sm max-w-md mx-auto flex items-center space-x-4 text-left">
+              <img
+                src={createdSuccessProduct.images?.[0] || 'https://images.unsplash.com/photo-1580481072645-022f9a6d1276?w=800'}
+                alt={createdSuccessProduct.title}
+                className="w-20 h-20 rounded-xl object-cover border border-gray-200 shadow-inner flex-shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-sm text-gray-900 truncate">{createdSuccessProduct.title}</h4>
+                <p className="text-xs text-gray-500 mt-0.5">{createdSuccessProduct.category} • {createdSuccessProduct.conditionGrade} Condition</p>
+                <span className="font-serif text-lg font-bold text-[#A17A16] block mt-1">${createdSuccessProduct.price}</span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+              <button
+                onClick={() => {
+                  setCreatedSuccessProduct(null);
+                  onClose();
+                  resetForm();
+                  if (onNavigateToMarketplace) {
+                    onNavigateToMarketplace();
+                  }
+                }}
+                className="bg-[#A17A16] hover:bg-[#8C5A2B] text-white px-6 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg w-full sm:w-auto flex items-center justify-center space-x-2"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>View on Marketplace</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setCreatedSuccessProduct(null);
+                  onClose();
+                  resetForm();
+                }}
+                className="px-6 py-3.5 rounded-xl font-bold text-xs text-gray-700 bg-gray-200 hover:bg-gray-300 transition-colors w-full sm:w-auto"
+              >
+                Okay / Return to Portal
+              </button>
+            </div>
+          </div>
+        ) : isProcessing3D ? (
+          /* Processing Spinner Overlay */
           <div className="py-12 text-center space-y-4">
             <div className="w-16 h-16 border-4 border-[#E5DEC9] border-t-[#A17A16] rounded-full animate-spin mx-auto" />
             <h3 className="font-serif text-xl font-bold text-gray-900">Synthesizing Volumetric 3D Model...</h3>
@@ -310,10 +474,22 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
             </div>
             <p className="text-xs font-mono text-gray-500">Mapping Multi-Angle Surface Textures to 3D Furniture Mesh</p>
           </div>
-        )}
-
-        {!isProcessing3D && (
+        ) : (
+          /* Form Content */
           <>
+            {/* Modal Header */}
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 rounded-full bg-[#1E232A] text-[#A17A16] flex items-center justify-center mx-auto mb-2 border-2 border-[#A17A16]">
+                <Box className="w-6 h-6" />
+              </div>
+              <h2 className="font-serif text-2xl font-bold text-gray-900">
+                List Furniture Item with 3D Scanner
+              </h2>
+              <p className="text-xs text-gray-500 mt-1">
+                Capture or Upload 4 Angles (Front, Back, Left Side, Right Side) to Generate interactive 360° 3D Model
+              </p>
+            </div>
+
             {/* Step Navigation Bar */}
             <div className="flex bg-[#E5DEC9]/50 p-1 rounded-2xl mb-6 border border-[#E5DEC9]">
               <button
@@ -380,7 +556,7 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-[11px] font-mono font-bold text-gray-700 uppercase mb-1">Material Composition</label>
                     <input
@@ -388,6 +564,17 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
                       value={material}
                       onChange={(e) => setMaterial(e.target.value)}
                       placeholder="e.g. Top-Grain Leather & Walnut Wood"
+                      className="w-full px-4 py-2.5 bg-white border border-[#E5DEC9] rounded-xl text-sm focus:outline-none focus:border-[#A17A16]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-mono font-bold text-gray-700 uppercase mb-1">Primary Color</label>
+                    <input
+                      type="text"
+                      value={color}
+                      onChange={(e) => setColor(e.target.value)}
+                      placeholder="e.g. Tan Brown"
                       className="w-full px-4 py-2.5 bg-white border border-[#E5DEC9] rounded-xl text-sm focus:outline-none focus:border-[#A17A16]"
                     />
                   </div>
@@ -403,6 +590,13 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
                     />
                   </div>
                 </div>
+
+                {isTagging && (
+                  <div className="flex items-center space-x-2 text-xs text-[#A17A16] font-mono animate-pulse bg-[#F9F4E9]/50 border border-[#E9D3A4]/60 p-2.5 rounded-xl">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>AI auto-tagging category, material & color...</span>
+                  </div>
+                )}
 
                 {/* AI Vision Damage Assessor */}
                 <DamageAssessorWidget
@@ -632,7 +826,8 @@ export const SellerListingModal = ({ isOpen, onClose, onAddProduct, user }) => {
 
                     <div className="h-56 w-full rounded-2xl overflow-hidden border border-[#E5DEC9] bg-[#FBF9F5] relative shadow-inner">
                       <Viewer3DCanvas
-                        modelUrl={glbPreviewUrl || '/uploads/models/sample_chair.gltf'}
+                        modelUrl={glbPreviewUrl || null}
+                        product={{ category }}
                         isAutoRotating={true}
                         zoomFactor={4.2}
                       />

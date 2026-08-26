@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { buildProceduralFurnitureModel } from '../../views/components/Viewer3DCanvas.jsx';
 
 /**
  * Shared 3D Asset Loading, Normalization & Validation Service
@@ -102,9 +103,28 @@ class ModelLoaderService {
         return reject(new Error('Model URL is required.'));
       }
 
+      const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url.startsWith('/') ? '' : '/'}${url}`;
+
+      if (this.cache.has(fullUrl)) {
+        const cachedGltf = this.cache.get(fullUrl);
+        const clonedScene = cachedGltf.scene.clone(true);
+        const box = new THREE.Box3().setFromObject(clonedScene);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+
+        return resolve({
+          scene: clonedScene,
+          boundingBox: box,
+          size: size,
+          center: center,
+          rawGltf: cachedGltf
+        });
+      }
+
       this.loader.load(
-        url,
+        fullUrl,
         (gltf) => {
+          this.cache.set(fullUrl, gltf);
           const loadedScene = gltf.scene;
           const clonedScene = loadedScene.clone(true);
 
@@ -137,20 +157,43 @@ class ModelLoaderService {
           }
         },
         (error) => {
-          console.error(`[ModelLoaderService Error] Failed to load 3D asset at "${url}":`, error);
-          reject(new Error(`Unable to load 3D model from "${url}". The file may be missing, corrupted, or not valid GLTF.`));
+          console.error(`[ModelLoaderService Error] Failed to load 3D asset at "${fullUrl}":`, error);
+          reject(new Error(`Unable to load 3D model from "${fullUrl}". The file may be missing, corrupted, or not valid GLTF.`));
         }
       );
     });
   }
 
   /**
+   * Resolve static fallback 3D model URL based on item category
+   */
+  getFallbackModelUrlForCategory(category = '') {
+    const c = (category || '').toLowerCase();
+    if (c.includes('sofa') || c.includes('couch') || c.includes('seating')) {
+      return '/models/sample_sofa.gltf';
+    }
+    if (c.includes('table') || c.includes('desk') || c.includes('dining')) {
+      return '/models/sample_table.gltf';
+    }
+    return '/models/sample_chair.gltf';
+  }
+
+  /**
    * Load, auto-orient front-faced, and normalize a GLB/GLTF model to realistic room dimensions
    */
   async loadAndNormalizeGLTFModel(url, category = '', roomDimensions = { width: 5, length: 6, height: 3 }, onProgress = null) {
-    const loaded = await this.loadGLTFModel(url, onProgress);
-    const rawScene = loaded.scene;
-    let rawSize = loaded.size;
+    let rawScene;
+    try {
+      const loaded = await this.loadGLTFModel(url, onProgress);
+      rawScene = loaded.scene;
+    } catch (err) {
+      // Create clean procedural PBR 3D model matching category
+      const colorHex = category.toLowerCase().includes('sofa') ? '#526B5C' : '#A17A16';
+      rawScene = buildProceduralFurnitureModel(category, category, colorHex);
+    }
+
+    const box = new THREE.Box3().setFromObject(rawScene);
+    let rawSize = box.getSize(new THREE.Vector3());
 
     const catLower = (category || '').toLowerCase();
     const isWallMounted = catLower.includes('art') || catLower.includes('frame') || catLower.includes('mirror') || catLower.includes('opening');
