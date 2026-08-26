@@ -2,21 +2,7 @@ import mongoose from 'mongoose';
 import { F13OrderModel } from '../f13-stripe-checkout/order.model.js';
 import { generateInvoice } from './invoice.controller.js';
 
-/**
- * ─────────────────────────────────────────────────────────────────────────────
- * Escrow Status State Machine Diagram
- * ─────────────────────────────────────────────────────────────────────────────
- * LOCKED_IN_ESCROW
- *    │
- *    ├──(seller enters correct OTP, F14)──► RELEASED_TO_SELLER (Triggers PDF Invoice, F15)
- *    │
- *    └──(buyer or seller raises dispute, F16)──► DISPUTED
- *                                                  │
- *                                                  ├──(admin: release to seller)──► RELEASED_TO_SELLER (Invoice, F15)
- *                                                  ├──(admin: refund to buyer)────► REFUNDED
- *                                                  └──(admin: split)──────────────► SPLIT_RESOLVED
- * ─────────────────────────────────────────────────────────────────────────────
- */
+
 
 /**
  * Shared Escrow Release Service

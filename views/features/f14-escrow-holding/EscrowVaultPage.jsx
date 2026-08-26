@@ -235,29 +235,6 @@ export function EscrowVaultPage({ user, onTrackJob }) {
                     {order.escrowStatus === 'DISPUTED' && 'Escrow frozen due to active dispute.'}
                   </span>
                 </div>
-              </div>
-              {order.escrowStatus === 'LOCKED_IN_ESCROW' && (
-                <div className="px-5 py-3.5 border-t border-amber-100 bg-amber-50/80 space-y-3">
-                  <button
-                    onClick={() => onTrackJob?.({
-                      _id: order.jobId || 'job_dispatch_004',
-                      productTitle: order.productTitle,
-                      productImage: order.productImage || '',
-                      pickupAddress: 'Dhanmondi Rd 27, Dhaka',
-                      pickupLat: 23.7509,
-                      pickupLng: 90.3754,
-                      dropoffAddress: 'Gulshan 2 Circle, Dhaka',
-                      dropoffLat: 23.7925,
-                      dropoffLng: 90.4078
-                    })}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#1E232A] hover:bg-[#2d3540] text-white text-xs font-bold rounded-xl border border-[#A17A16]/40 hover:border-[#C9980A] transition-all group shadow-sm"
-                  >
-                    <Radio className="w-3.5 h-3.5 text-[#C9980A] group-hover:animate-pulse" />
-                    <span>TRACK LIVE COURIER LOCATION</span>
-                    <span className="ml-1 w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  </button>
-
-                </div>
 
                 <div className="flex items-center space-x-2 flex-wrap gap-2 w-full sm:w-auto justify-end">
                   <DisputeStatusBadge order={order} />
@@ -279,8 +256,17 @@ export function EscrowVaultPage({ user, onTrackJob }) {
                     </a>
                   )}
 
-                  {/* Raise Dispute Button */}
-                  {order.escrowStatus !== 'REFUNDED' && order.escrowStatus !== 'SPLIT_RESOLVED' && (
+                  {/* Raise Dispute Button (Disabled when payout complete / released / refunded) */}
+                  {['RELEASED_TO_SELLER', 'REFUNDED', 'SPLIT_RESOLVED'].includes(order.escrowStatus) ? (
+                    <button
+                      disabled
+                      title="Escrow release complete and invoice issued. Disputes disabled."
+                      className="px-3 py-2 bg-gray-100 text-gray-400 border border-gray-200 rounded-xl text-xs font-bold font-mono flex items-center space-x-1 shrink-0 min-h-[44px] cursor-not-allowed opacity-60"
+                    >
+                      <AlertOctagon className="w-3.5 h-3.5 text-gray-400" />
+                      <span>RAISE DISPUTE</span>
+                    </button>
+                  ) : (
                     <button
                       onClick={() => setDisputeOrderModal(order)}
                       className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 rounded-xl text-xs font-bold font-mono flex items-center space-x-1 shrink-0 min-h-[44px]"
@@ -297,6 +283,29 @@ export function EscrowVaultPage({ user, onTrackJob }) {
                   )}
                 </div>
               </div>
+
+              {order.escrowStatus === 'LOCKED_IN_ESCROW' && (
+                <div className="px-5 py-3.5 border-t border-amber-100 bg-amber-50/80 space-y-3">
+                  <button
+                    onClick={() => onTrackJob?.({
+                      _id: order.jobId || 'job_dispatch_004',
+                      productTitle: order.productTitle,
+                      productImage: order.productImage || '',
+                      pickupAddress: 'Dhanmondi Rd 27, Dhaka',
+                      pickupLat: 23.7509,
+                      pickupLng: 90.3754,
+                      dropoffAddress: 'Gulshan 2 Circle, Dhaka',
+                      dropoffLat: 23.7925,
+                      dropoffLng: 90.4078
+                    })}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#1E232A] hover:bg-[#2d3540] text-white text-xs font-bold rounded-xl border border-[#A17A16]/40 hover:border-[#C9980A] transition-all group shadow-sm"
+                  >
+                    <Radio className="w-3.5 h-3.5 text-[#C9980A] group-hover:animate-pulse" />
+                    <span>TRACK LIVE COURIER LOCATION</span>
+                    <span className="ml-1 w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  </button>
+                </div>
+              )}
 
             </div>
           );

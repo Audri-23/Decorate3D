@@ -63,6 +63,7 @@ export default function App() {
     seller_dashboard: '/seller',
     logistics: '/courier',
     admin_dashboard: '/admin',
+    admin_disputes: '/admin-disputes',
     escrow_vault: '/escrow-vault',
     seller_escrow: '/seller-escrow',
     profile: '/profile'
@@ -70,6 +71,7 @@ export default function App() {
 
   const getTabFromPath = (pathStr) => {
     const p = (pathStr || '/').toLowerCase();
+    if (p.includes('/admin-disputes')) return 'admin_disputes';
     if (p.includes('/seller-escrow')) return 'seller_escrow';
     if (p.includes('/seller')) return 'seller_dashboard';
     if (p.includes('/courier')) return 'logistics';
@@ -118,7 +120,7 @@ export default function App() {
         setActiveRoleRoute('seller');
       } else if (targetTab === 'logistics') {
         setActiveRoleRoute('courier');
-      } else if (targetTab === 'admin_dashboard') {
+      } else if (targetTab === 'admin_dashboard' || targetTab === 'admin_disputes') {
         setActiveRoleRoute('admin');
       } else if (targetTab === 'marketplace') {
         setActiveRoleRoute('buyer');

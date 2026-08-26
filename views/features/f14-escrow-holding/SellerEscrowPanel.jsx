@@ -44,11 +44,15 @@ export function SellerEscrowPanel({ user, onTrackJob }) {
           : []; // If no user email, show nothing
           
         setOrders(filteredOrders);
-        const initialInputs = {};
-        filteredOrders.forEach(order => {
-          initialInputs[order._id] = { otp: '', status: 'idle', message: '' };
+        setOtpInputs(prev => {
+          const updated = { ...prev };
+          filteredOrders.forEach(order => {
+            if (!updated[order._id]) {
+              updated[order._id] = { otp: '', status: 'idle', message: '' };
+            }
+          });
+          return updated;
         });
-        setOtpInputs(initialInputs);
       } else {
         setError('Could not load orders.');
       }
@@ -222,7 +226,16 @@ export function SellerEscrowPanel({ user, onTrackJob }) {
             <div className="px-5 py-3 border-t border-gray-100 bg-[#FBF9F5] flex items-center justify-between gap-3">
               <DisputeStatusBadge order={order} />
 
-              {order.escrowStatus !== 'REFUNDED' && order.escrowStatus !== 'SPLIT_RESOLVED' && (
+              {['RELEASED_TO_SELLER', 'REFUNDED', 'SPLIT_RESOLVED'].includes(order.escrowStatus) ? (
+                <button
+                  disabled
+                  title="Escrow payout complete and invoice issued. Disputes disabled."
+                  className="px-3 py-2 bg-gray-100 text-gray-400 border border-gray-200 rounded-xl text-xs font-bold font-mono flex items-center space-x-1 shrink-0 min-h-[44px] cursor-not-allowed opacity-60"
+                >
+                  <AlertOctagon className="w-3.5 h-3.5 text-gray-400" />
+                  <span>RAISE DISPUTE</span>
+                </button>
+              ) : (
                 <button
                   onClick={() => setDisputeOrderModal(order)}
                   className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 rounded-xl text-xs font-bold font-mono flex items-center space-x-1 shrink-0 min-h-[44px]"
