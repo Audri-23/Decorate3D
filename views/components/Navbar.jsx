@@ -19,8 +19,8 @@ export const Navbar = ({ activeTab, setActiveTab, cartCount, openAuthModal, user
             </span>
           </div>
 
-          {/* Main Navigation Links */}
-          <nav className="hidden md:flex items-center space-x-6">
+          {/* Main Navigation Links — Horizontally scrollable on mobile */}
+          <nav className="flex items-center space-x-3 sm:space-x-6 overflow-x-auto py-2 max-w-full whitespace-nowrap">
             <button
               onClick={() => setActiveTab('marketplace')}
               className={`text-sm font-medium transition-colors ${
@@ -82,6 +82,23 @@ export const Navbar = ({ activeTab, setActiveTab, cartCount, openAuthModal, user
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>Escrow Release</span>
+              </button>
+            )}
+
+
+
+            {/* Admin Disputes — show for admin role or admin tab */}
+            {(!user || user.role === 'admin') && (
+              <button
+                onClick={() => setActiveTab('admin_disputes')}
+                className={`text-sm font-medium transition-colors flex items-center space-x-1 ${
+                  activeTab === 'admin_disputes'
+                    ? 'text-[#1E232A] font-bold border-b-2 border-[#A17A16] pb-1'
+                    : 'text-gray-600 hover:text-[#A17A16]'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-rose-600" />
+                <span>Admin Disputes</span>
               </button>
             )}
           </nav>

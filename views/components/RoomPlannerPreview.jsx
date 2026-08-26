@@ -157,7 +157,7 @@ export const RoomPlannerPreview = ({ product, isOpen, onClose, initialMarketplac
         const layoutId = data.data?._id || selectedLayoutId;
         const relativeDiskPath = data.storageLocation?.diskDirectory || `uploads/room-layouts/layout_${layoutId}.json`;
 
-        setSaveSuccessMsg(`Saved to Database & ${relativeDiskPath}!`);
+
         if (data.data?._id) setSelectedLayoutId(data.data._id);
         setHasUnsavedChanges(false);
         fetchSavedLayouts();
@@ -393,8 +393,8 @@ export const RoomPlannerPreview = ({ product, isOpen, onClose, initialMarketplac
           <button
             onClick={() => setIsPresentationMode(!isPresentationMode)}
             className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold border transition-all flex items-center space-x-1.5 ${isPresentationMode
-                ? 'bg-amber-950/80 border-amber-500/50 text-amber-300'
-                : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
+              ? 'bg-amber-950/80 border-amber-500/50 text-amber-300'
+              : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
               }`}
             title="Toggle Photorealistic Presentation Mode"
           >
@@ -649,8 +649,8 @@ export const RoomPlannerPreview = ({ product, isOpen, onClose, initialMarketplac
                       key={f.id}
                       onClick={() => { setFloorCustomization((prev) => ({ ...prev, floorMaterial: f.id })); markDirty(); }}
                       className={`w-full p-2.5 rounded-xl border text-xs font-mono font-semibold transition-all text-left flex items-center justify-between ${floorCustomization.floorMaterial === f.id
-                          ? 'bg-[#E9D3A4]/15 border-[#E9D3A4] text-[#E9D3A4]'
-                          : 'bg-white/5 border-white/10 text-gray-300 hover:border-white/30'
+                        ? 'bg-[#E9D3A4]/15 border-[#E9D3A4] text-[#E9D3A4]'
+                        : 'bg-white/5 border-white/10 text-gray-300 hover:border-white/30'
                         }`}
                     >
                       <span>{f.name}</span>
@@ -880,10 +880,10 @@ export const RoomPlannerPreview = ({ product, isOpen, onClose, initialMarketplac
           {/* Spatial Clearance & Real Overlap Conflict Analytics Card */}
           {clearanceReport && (
             <div className={`border rounded-2xl p-4 space-y-3 transition-all ${clearanceReport.isOverlapping
-                ? 'bg-rose-950/90 border-rose-500/80 text-rose-300'
-                : clearanceReport.intersectsWall
-                  ? 'bg-amber-950/70 border-amber-500/60 text-amber-300'
-                  : 'bg-white/5 border-white/10 text-gray-300'
+              ? 'bg-rose-950/90 border-rose-500/80 text-rose-300'
+              : clearanceReport.intersectsWall
+                ? 'bg-amber-950/70 border-amber-500/60 text-amber-300'
+                : 'bg-white/5 border-white/10 text-gray-300'
               }`}>
               <h4 className="font-serif text-xs font-bold flex items-center justify-between">
                 <span className="uppercase tracking-wider">Spatial Fit & Model Analytics</span>

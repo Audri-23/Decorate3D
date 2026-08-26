@@ -1,35 +1,8 @@
 import mongoose from 'mongoose';
 import { F13OrderModel } from '../f13-stripe-checkout/order.model.js';
 
-// Demo orders used when MongoDB is offline so the page still works
-const demoOrders = [
-  {
-    _id: 'demo_ord_001',
-    buyerEmail: 'buyer@decorate3d.com',
-    productTitle: 'Mid-Century Modern Tan Leather Lounge Chair',
-    amount: 450,
-    platformCommissionFee: 45,
-    sellerEarnings: 405,
-    stripePaymentIntentId: 'pi_demo_test_abc123',
-    paymentStatus: 'succeeded',
-    escrowStatus: 'LOCKED_IN_ESCROW',
-    otpCode: '7291',
-    createdAt: new Date()
-  },
-  {
-    _id: 'demo_ord_002',
-    buyerEmail: 'buyer@decorate3d.com',
-    productTitle: 'Minimalist Scandinavian Bouclé Accent Chair',
-    amount: 320,
-    platformCommissionFee: 32,
-    sellerEarnings: 288,
-    stripePaymentIntentId: 'pi_demo_test_xyz456',
-    paymentStatus: 'succeeded',
-    escrowStatus: 'LOCKED_IN_ESCROW',
-    otpCode: '4853',
-    createdAt: new Date()
-  }
-];
+// In-memory fallback (empty for clean demo)
+const demoOrders = [];
 
 // GET /api/escrow/orders?buyerEmail=xxx&sellerEmail=yyy&escrowStatus=LOCKED_IN_ESCROW
 // Returns orders filtered by buyerEmail, sellerEmail, and/or escrowStatus
@@ -64,66 +37,50 @@ export async function getEscrowOrders(req, res) {
 }
 
 
+// Export demo orders globally for offline fallback in service files
+global.demoEscrowOrders = demoOrders;
+
 // POST /api/escrow/verify-otp
-// Seller enters the OTP. If it matches, escrow is unlocked and funds are released.
+// Seller enters the OTP. If it matches, escrow is unlocked via shared service.
 export async function verifyOtpAndRelease(req, res) {
   try {
-
     const { orderId, enteredOtp } = req.body;
 
-    // Basic check — make sure both values were sent
     if (!orderId || !enteredOtp) {
       return res.status(400).json({ success: false, error: 'Order ID and OTP are required.' });
     }
 
     const isMongoConnected = mongoose.connection && mongoose.connection.readyState === 1;
 
+    let targetOrder = null;
     if (isMongoConnected) {
-
-      // Find the order in the database
-      const order = await F13OrderModel.findById(orderId);
-
-      if (!order) {
-        return res.status(404).json({ success: false, error: 'Order not found.' });
-      }
-
-      // Check if the OTP the seller entered matches the one stored in the order
-      if (enteredOtp !== order.otpCode) {
-        return res.status(400).json({ success: false, error: 'Incorrect OTP. Please ask the buyer for the correct code.' });
-      }
-
-      // OTP is correct! Update the escrow status to released
-      order.escrowStatus = 'RELEASED_TO_SELLER';
-      await order.save();
-
-      return res.status(200).json({
-        success: true,
-        message: 'OTP verified! Escrow unlocked. Seller payout has been released.',
-        order
-      });
-
+      targetOrder = await F13OrderModel.findById(orderId);
     } else {
-
-      // MongoDB is offline — simulate OTP check using demo orders
-      const demoOrder = demoOrders.find(o => o._id === orderId);
-
-      if (!demoOrder) {
-        return res.status(404).json({ success: false, error: 'Order not found in demo data.' });
-      }
-
-      if (enteredOtp !== demoOrder.otpCode) {
-        return res.status(400).json({ success: false, error: 'Incorrect OTP. Please ask the buyer for the correct code.' });
-      }
-
-      // Simulate releasing escrow in demo mode
-      demoOrder.escrowStatus = 'RELEASED_TO_SELLER';
-
-      return res.status(200).json({
-        success: true,
-        message: 'OTP verified! Escrow unlocked. Seller payout has been released.',
-        order: demoOrder
-      });
+      targetOrder = demoOrders.find(o => String(o._id) === String(orderId));
     }
+
+    if (!targetOrder) {
+      return res.status(404).json({ success: false, error: 'Order not found.' });
+    }
+
+    // OTP validation check
+    if (enteredOtp !== targetOrder.otpCode) {
+      return res.status(400).json({ success: false, error: 'Incorrect OTP. Please ask the buyer for the correct code.' });
+    }
+
+    // Call shared release service (handles dispute check, status update, and invoice creation)
+    const { releaseEscrow } = await import('../f15-invoice/escrowRelease.service.js');
+    const result = await releaseEscrow(orderId, 'OTP');
+
+    if (!result.success) {
+      return res.status(result.status || 400).json(result);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'OTP verified! Escrow unlocked. Seller payout has been released.',
+      order: result.order
+    });
 
   } catch (error) {
     return res.status(500).json({ success: false, error: error.message });

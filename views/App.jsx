@@ -16,6 +16,7 @@ import { EscrowVaultPage } from './features/f14-escrow-holding/EscrowVaultPage.j
 import { SellerEscrowPanel } from './features/f14-escrow-holding/SellerEscrowPanel.jsx';
 import { CourierDispatchBoard } from './features/f11-courier-dispatch/CourierDispatchBoard.jsx';
 import { LiveTrackingMap } from './features/f12-live-tracking/LiveTrackingMap.jsx';
+import { DisputeDashboard } from './features/f16-disputes/DisputeDashboard.jsx';
 
 import { seedProductsData } from '../models/seedData.js';
 import { Box, ShieldCheck, MapPin, Truck, Grid, Lock, CheckCircle, Trash2 } from 'lucide-react';
@@ -466,6 +467,11 @@ export default function App() {
         {/* Seller Escrow Release Panel — Seller enters buyer OTP to unlock funds */}
         {activeTab === 'seller_escrow' && (
           <SellerEscrowPanel user={user} />
+        )}
+
+        {/* Admin Disputes — F16 Dispute & Mediation Dashboard */}
+        {activeTab === 'admin_disputes' && (
+          <DisputeDashboard />
         )}
       </main>
 
